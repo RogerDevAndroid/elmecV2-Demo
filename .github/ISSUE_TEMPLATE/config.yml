@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentación
+    url: https://github.com/rgarciavital/elmecV2-Demo/blob/main/README.md
+    about: Consulta la documentación del proyecto
+  - name: 💬 Discusiones
+    url: https://github.com/rgarciavital/elmecV2-Demo/discussions
+    about: Haz preguntas generales o inicia discusiones sobre el proyecto
+  - name: 🔒 Reporte de Seguridad
+    url: mailto:security@example.com
+    about: Reporta vulnerabilidades de seguridad de forma privada
+  - name: 📞 Soporte
+    url: https://github.com/rgarciavital/elmecV2-Demo/discussions/categories/support
+    about: Obtén ayuda con problemas de configuración o uso
