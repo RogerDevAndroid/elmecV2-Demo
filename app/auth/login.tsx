@@ -136,19 +136,15 @@ export default function Login() {
           )}
         </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.push('/auth/register')}>
-            <Text style={styles.registerLink}>
-              ¿No tienes cuenta?{' '}
-              <Text style={styles.registerLinkBold}>Regístrate</Text>
-            </Text>
-          </TouchableOpacity>
+          {/* Registro oculto para demo */}
         </View>
 
         <View style={styles.testCredentials}>
           <Text style={styles.testTitle}>Credenciales de prueba:</Text>
-          <Text style={styles.testText}>Email: i.pineda@elmec.com.mx</Text>
-          <Text style={styles.testText}>Contraseña: password</Text>
-          <Text style={styles.testText}>O usa: cliente@gmail.com</Text>
+          <Text style={styles.testText}>Email: dev@softvibes.com.mx</Text>
+          <Text style={styles.testText}>Contraseña: holamundo</Text>
+          <Text style={styles.testText}>O usa: mafer@elmec.com</Text>
+          <Text style={styles.testText}>Contraseña: holamundo</Text>
         </View>
       </ScrollView>
     </LinearGradient>

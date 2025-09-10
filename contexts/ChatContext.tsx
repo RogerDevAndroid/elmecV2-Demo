@@ -98,7 +98,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [session]);
 
   const loadChatRooms = async () => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -119,23 +122,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       if (error) {
         console.error('Error loading chat rooms:', error);
         setError(`Error al cargar los chats: ${error.message}`);
+        setLoading(false);
         return;
       }
 
       setChatRooms(data || []);
 
-      // Load messages for each room
-      for (const room of data || []) {
-        await loadRoomMessages(room.id);
-        // Only setup realtime if we have a valid session
-        if (session?.access_token) {
-          setupRealtimeSubscription(room.id);
-        }
-      }
+      // Load messages for each room (limit to prevent infinite loading)
+       const roomPromises = (data || []).slice(0, 10).map(async (room: any) => {
+         try {
+           await loadRoomMessages(room.id);
+           // Only setup realtime if we have a valid session
+           if (session?.access_token) {
+             setupRealtimeSubscription(room.id);
+           }
+         } catch (roomError) {
+           console.error(`Error loading room ${room.id}:`, roomError);
+         }
+       });
+
+      await Promise.allSettled(roomPromises);
     } catch (error) {
       console.error('Error loading chat rooms:', error);
       setError(
-        `Error al cargar los chats: ${error.message || 'Error desconocido'}`
+        `Error al cargar los chats: ${error instanceof Error ? error.message : 'Error desconocido'}`
       );
     } finally {
       setLoading(false);
@@ -421,7 +431,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       // Check if chat room already exists between these participants
-      const { data: existingRoom } = await supabase
+      const { data: existingRoom } = await (supabase as any)
         .from('chat_rooms')
         .select('*')
         .contains('participants', [user.id])
@@ -439,7 +449,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Create new chat room
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('chat_rooms')
         .insert({
           tipo: requestId ? 'support' : 'general',
@@ -448,7 +458,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           is_active: true,
           metadata: {
             participant_names: [
-              `${user.nombre} ${user.apellido_paterno}`,
+              user.full_name || user.email,
               participantName,
             ],
           },

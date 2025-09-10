@@ -26,6 +26,7 @@ export class SupabaseService {
       if (authData.user) {
         // Create user profile
         const { password, ...userProfile } = userData;
+        
         const { data, error } = await supabase
           .from('users')
           .insert({
@@ -35,12 +36,12 @@ export class SupabaseService {
             activo: true,
             is_online: false,
             last_seen: new Date().toISOString(),
-          })
+          } as any)
           .select()
           .single();
 
         if (error) throw error;
-        return data;
+        return data as User;
       }
 
       throw new Error('User creation failed');
@@ -51,42 +52,126 @@ export class SupabaseService {
   }
 
   static async loginUser(email: string, password: string): Promise<User> {
+    // Input validation
+    if (!email || !password) {
+      throw new Error('Email y contraseña son requeridos');
+    }
+
+    if (!email.includes('@')) {
+      throw new Error('Formato de email inválido');
+    }
+
     try {
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      // Clear any existing session first
+      await supabase.auth.signOut();
+      
+      // Set timeout for authentication request
+      const authPromise = supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (authError) throw authError;
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Tiempo de espera agotado. Verifica tu conexión.')), 15000);
+      });
 
-      if (authData.user) {
-        // Get user profile
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
+      const authResult = await Promise.race([
+        authPromise,
+        timeoutPromise
+      ]) as any;
 
-        if (error) throw error;
+      const { data: authData, error: authError } = authResult;
 
-        // Update last login and online status
-        await supabase
-          .from('users')
-          .update({
-            last_login: new Date().toISOString(),
-            is_online: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', authData.user.id);
-
-        return data;
+      if (authError) {
+        // Enhanced error handling with specific messages
+        if (authError.message?.includes('Invalid login credentials')) {
+          throw new Error('Email o contraseña incorrectos');
+        }
+        if (authError.message?.includes('Email not confirmed')) {
+          throw new Error('Debes confirmar tu email antes de iniciar sesión');
+        }
+        if (authError.message?.includes('Too many requests')) {
+          throw new Error('Demasiados intentos. Espera unos minutos antes de intentar de nuevo');
+        }
+        if (authError.message?.includes('User not found')) {
+          throw new Error('No existe una cuenta con este email');
+        }
+        throw new Error(authError.message || 'Error de autenticación');
       }
 
-      throw new Error('Login failed');
-    } catch (error) {
-      console.error('Error logging in:', error);
-      throw error;
+      if (!authData?.user) {
+        throw new Error('Error en la autenticación. Intenta de nuevo');
+      }
+
+      // Get user profile with timeout
+      const profilePromise = supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      const profileTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Tiempo de espera agotado al cargar perfil')), 10000);
+      });
+
+      const profileResult = await Promise.race([
+        profilePromise,
+        profileTimeoutPromise
+      ]) as any;
+
+      const { data: userData, error: profileError } = profileResult;
+
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          throw new Error('Perfil de usuario no encontrado. Contacta al administrador');
+        }
+        throw new Error('Error al cargar el perfil de usuario');
+      }
+
+      if (!userData) {
+        throw new Error('No se pudo cargar la información del usuario');
+      }
+
+      // Check if user is active
+      if (userData.activo === false) {
+        throw new Error('Tu cuenta está desactivada. Contacta al administrador');
+      }
+
+      // Update last login and online status (non-blocking)
+      const updateData = {
+        last_login: new Date().toISOString(),
+        is_online: true,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Fire and forget update - don't block login
+      supabase
+        .from('users')
+        .update(updateData as any)
+        .eq('id', authData.user.id)
+        .then((result: any) => {
+          if (result.error) {
+            console.warn('Warning: Could not update user status:', result.error);
+          }
+        })
+        .catch((updateErr: any) => {
+          console.warn('Warning: Failed to update user status:', updateErr);
+        });
+
+      return userData as User;
+    } catch (error: any) {
+      console.error('Login error details:', {
+        message: error.message,
+        email: email?.substring(0, 3) + '***', // Log partial email for debugging
+        timestamp: new Date().toISOString()
+      });
+      
+      // Re-throw with user-friendly message
+      if (error.message && typeof error.message === 'string') {
+        throw error;
+      }
+      
+      throw new Error('Error de conexión. Verifica tu internet e intenta de nuevo');
     }
   }
 
@@ -102,7 +187,7 @@ export class SupabaseService {
           .update({
             is_online: false,
             last_seen: new Date().toISOString(),
-          })
+          } as any)
           .eq('id', user.id);
       }
 
@@ -145,7 +230,7 @@ export class SupabaseService {
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', userId);
 
       if (error) throw error;
@@ -251,7 +336,7 @@ export class SupabaseService {
           is_online: isOnline,
           last_seen: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', userId);
 
       if (error) throw error;
@@ -267,7 +352,7 @@ export class SupabaseService {
     try {
       const { data, error } = await supabase
         .from('requests')
-        .insert(requestData)
+        .insert(requestData as any)
         .select()
         .single();
 
@@ -286,7 +371,7 @@ export class SupabaseService {
         });
       }
 
-      return data;
+      return data as Request;
     } catch (error) {
       console.error('Error creating request:', error);
       throw error;
@@ -390,7 +475,7 @@ export class SupabaseService {
         .update({
           estatus: status,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', requestId);
 
       if (error) throw error;
@@ -502,12 +587,12 @@ export class SupabaseService {
           request_id: requestId,
           is_active: true,
           metadata: {},
-        })
+        } as any)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return data as ChatRoom;
     } catch (error) {
       console.error('Error creating chat room:', error);
       throw error;
@@ -531,7 +616,7 @@ export class SupabaseService {
           message,
           type,
           is_deleted: false,
-        })
+        } as any)
         .select()
         .single();
 
@@ -549,10 +634,10 @@ export class SupabaseService {
             type: data.type,
           },
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', chatRoomId);
 
-      return data;
+      return data as Message;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -586,7 +671,7 @@ export class SupabaseService {
           audio_duration: audioDuration,
           reply_to: replyTo,
           is_deleted: false,
-        })
+        } as any)
         .select(
           `
           *,
@@ -610,10 +695,10 @@ export class SupabaseService {
             type: data.type,
           },
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', chatRoomId);
 
-      return data;
+      return data as Message;
     } catch (error) {
       console.error('Error sending chat message:', error);
       throw error;
@@ -647,7 +732,7 @@ export class SupabaseService {
           is_deleted: true,
           message: 'Este mensaje fue eliminado',
           edited_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', messageId);
 
       if (error) throw error;
@@ -667,7 +752,7 @@ export class SupabaseService {
         .update({
           message: newMessage,
           edited_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', messageId);
 
       if (error) throw error;
@@ -684,7 +769,7 @@ export class SupabaseService {
     try {
       const { error } = await supabase
         .from('notifications')
-        .insert(notificationData);
+        .insert(notificationData as any);
 
       if (error) throw error;
     } catch (error) {
@@ -719,7 +804,7 @@ export class SupabaseService {
         .update({
           read: true,
           read_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', notificationId);
 
       if (error) throw error;

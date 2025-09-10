@@ -34,6 +34,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "android": {
+      "package": "com.rogermck.boltexponativewind",
+      "minSdkVersion": 24
     }
   }
 }

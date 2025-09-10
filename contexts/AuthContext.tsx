@@ -35,24 +35,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔄 Sesión inicial obtenida:', session ? 'Existe' : 'No existe');
-      setSession(session);
-      if (session?.user) {
-        loadUserProfile(session.user.id);
-      } else {
-        setLoading(false);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('🔄 Sesión inicial obtenida:', session ? 'Existe' : 'No existe');
+        setSession(session);
+        
+        if (session?.user) {
+          await loadUserProfile(session.user.id);
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      
       console.log('🔄 Cambio de autenticación detectado:', event, session ? 'Sesión activa' : 'Sin sesión');
       setSession(session);
-      if (session?.user) {
+      
+      if (session?.user && event !== 'TOKEN_REFRESHED') {
         await loadUserProfile(session.user.id);
       } else {
         console.log('🚪 Limpiando estado de usuario...');
@@ -61,7 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Computed value for authentication status
@@ -81,6 +109,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadUserProfile = async (userId: string) => {
     try {
+      // Avoid loading if already loading or if user is already loaded
+      if (user?.id === userId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       const { data, error } = await supabase
         .from('users')
@@ -94,34 +128,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (error.code === 'PGRST116') {
           console.log('User profile not found, signing out...');
           await supabase.auth.signOut();
+          setLoading(false);
           return;
         }
-      } else {
-        setUser(data);
-
-        // Update user online status
-          try {
-            const updateData = {
-              is_online: true,
-              last_seen: new Date().toISOString(),
-              last_login: new Date().toISOString(),
-            };
-            const { error: updateError } = await (supabase as any)
-              .from('users')
-              .update(updateData)
-              .eq('id', userId);
-            
-            if (updateError) {
-              console.error('Error updating user status:', updateError);
-            }
-          } catch (updateErr) {
-            console.error('Failed to update user status:', updateErr);
-          }
+        // For other errors, still set loading to false and throw
+        setLoading(false);
+        throw error;
       }
+      
+      // Set user data
+      setUser(data);
+
+      // Update user online status (non-blocking)
+      (supabase as any)
+        .from('users')
+        .update({
+          is_online: true,
+          last_seen: new Date().toISOString(),
+          last_login: new Date().toISOString(),
+        })
+        .eq('id', userId)
+        .then(({ error: updateError }: any) => {
+          if (updateError) {
+            console.error('Error updating user status:', updateError);
+          }
+        })
+        .catch((updateErr: any) => {
+          console.error('Failed to update user status:', updateErr);
+        });
+        
+      setLoading(false);
     } catch (error) {
       console.error('Error loading user profile:', error);
-    } finally {
       setLoading(false);
+      throw error;
     }
   };
 
@@ -261,6 +301,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       console.log('🚪 Cerrando sesión en Supabase...');
       const { error } = await supabase.auth.signOut();
+      
+      // Clear local state regardless of signOut result
+      setSession(null);
+      setUser(null);
+      
       if (error) {
         console.error('❌ Logout error:', error);
       } else {
@@ -268,6 +313,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error) {
       console.error('❌ Logout error:', error);
+      // Clear state even if there's an error
+      setSession(null);
+      setUser(null);
     } finally {
       setLoading(false);
       console.log('🏁 Proceso de logout finalizado');

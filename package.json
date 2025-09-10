@@ -22,7 +22,9 @@
     "pre-commit": "npm run lint:check && npm run format:check && npm run type-check",
     "validate-users": "node scripts/validate-existing-users.js",
     "validate-demo": "node scripts/validate-demo-data.js",
-    "setup-demo": "echo 'Ejecuta la migración insert_complete_demo_data.sql en Supabase SQL Editor'"
+    "setup-demo": "echo 'Ejecuta la migración insert_complete_demo_data.sql en Supabase SQL Editor'",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
@@ -71,6 +73,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@eslint/js": "^9.35.0",
+    "@react-native-community/cli": "^20.0.2",
     "@types/react": "~19.0.10",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
