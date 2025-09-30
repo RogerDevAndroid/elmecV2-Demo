@@ -1,58 +1,167 @@
-# ElmecV2 - Sistema de Gestión de Solicitudes
+# ElmecV2 - Sistema de Gestión de Solicitudes y Soporte Técnico
 
-[![React Native](https://img.shields.io/badge/React%20Native-0.74-blue.svg)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo-51-black.svg)](https://expo.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
+[![React Native](https://img.shields.io/badge/React%20Native-0.79-blue.svg)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-53-black.svg)](https://expo.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)](https://supabase.com/)
 [![Netlify](https://img.shields.io/badge/Netlify-Deployed-success.svg)](https://netlify.com/)
+[![Redux Toolkit](https://img.shields.io/badge/Redux-Toolkit-purple.svg)](https://redux-toolkit.js.org/)
 
 ## 📱 Descripción
 
-ElmecV2 es una aplicación móvil multiplataforma desarrollada con React Native y Expo para la gestión eficiente de solicitudes. La aplicación permite a los usuarios crear, gestionar y hacer seguimiento de solicitudes, mientras que los administradores pueden supervisar el sistema completo a través de un dashboard avanzado.
+**ElmecV2** es una aplicación móvil multiplataforma empresarial desarrollada con **React Native** y **Expo** para la gestión integral de solicitudes de soporte técnico y servicio al cliente. La aplicación ofrece un sistema completo de comunicación en tiempo real, gestión de solicitudes, calculadoras especializadas para ingeniería, y herramientas administrativas avanzadas.
+
+### 🎯 Propósito del Sistema
+
+ElmecV2 está diseñado específicamente para empresas de servicios técnicos e ingeniería que necesitan:
+- **Gestión centralizada** de solicitudes de servicio y soporte
+- **Comunicación en tiempo real** entre clientes, técnicos y administradores
+- **Calculadoras especializadas** para procesos de fresado y barrenado
+- **Seguimiento detallado** de solicitudes con estados y prioridades
+- **Dashboard administrativo** con métricas y análisis en tiempo real
+- **Sistema de notificaciones** para mantener a todos informados
 
 ## ✨ Características Principales
 
-### 👤 Para Usuarios
-- **Autenticación Segura**: Login y registro con validación robusta
-- **Gestión de Solicitudes**: Crear, editar y hacer seguimiento de solicitudes
-- **Calculadora Integrada**: Herramienta de cálculo incorporada
-- **Interfaz Intuitiva**: Diseño moderno y fácil de usar
-- **Notificaciones**: Actualizaciones en tiempo real del estado de solicitudes
+### 👤 Para Usuarios Finales (Clientes)
+- **Autenticación Segura**: Sistema completo de login/registro con validación en tiempo real
+- **Gestión de Solicitudes**:
+  - Crear nuevas solicitudes con título, descripción, tipo y prioridad
+  - Adjuntar archivos e imágenes
+  - Seguimiento en tiempo real del estado
+  - Historial completo de solicitudes
+- **Chat en Tiempo Real**:
+  - Comunicación directa con soporte/técnicos
+  - Mensajes de texto, imágenes, archivos y audio
+  - Indicadores de "escribiendo..."
+  - Emojis y respuestas a mensajes
+- **Calculadoras Especializadas**:
+  - Calculadora de Fresado con múltiples operaciones
+  - Calculadora de Barrenado para cálculos de perforación
+  - Configuraciones personalizadas guardadas
+- **Directorio de Contactos**: Acceso rápido a agentes y técnicos
+- **Perfil de Usuario**: Gestión de datos personales y preferencias
+- **Notificaciones Push**: Alertas de cambios de estado y nuevos mensajes
 
-### 👨‍💼 Para Administradores
-- **Dashboard Completo**: Visualización de estadísticas y métricas
-- **Gestión de Usuarios**: Administración de cuentas y permisos
-- **Análisis de Datos**: Gráficos y reportes detallados
-- **Monitoreo del Sistema**: Seguimiento de errores y rendimiento
+### 👨‍💼 Para Administradores y Agentes
+- **Dashboard Administrativo Completo**:
+  - Métricas en tiempo real (solicitudes activas, resueltas, pendientes)
+  - Gráficos de tendencias y estadísticas
+  - Vista general del sistema
+- **Gestión de Solicitudes Avanzada**:
+  - Asignación de solicitudes a agentes
+  - Cambio de estados y prioridades
+  - Búsqueda y filtrado avanzado
+  - Exportación de reportes
+- **Gestión de Usuarios**:
+  - Administración de cuentas (clientes y agentes)
+  - Roles y permisos (customer, agent, admin)
+  - Estados de usuario (activo/inactivo)
+  - Visualización de estados en línea
+- **Sistema de Chat Multicanal**:
+  - Múltiples salas de chat simultáneas
+  - Historial completo de conversaciones
+  - Soporte para archivos multimedia
+- **Análisis y Reportes**:
+  - Reportes de desempeño de agentes
+  - Estadísticas de tiempo de respuesta
+  - Métricas de satisfacción
 
-### 🔧 Características Técnicas
-- **Multiplataforma**: Compatible con iOS, Android y Web
-- **Offline First**: Funcionalidad básica sin conexión
-- **Performance Optimizada**: Lazy loading, memoización y FlatList
-- **Manejo de Errores**: Sistema robusto de logging y error handling
-- **Seguridad**: Autenticación JWT y Row Level Security (RLS)
+### 🔧 Características Técnicas Avanzadas
+- **Arquitectura Multiplataforma**:
+  - Compatible con iOS, Android y Web
+  - Código único para todas las plataformas
+  - Responsive design adaptativo
+- **Comunicación en Tiempo Real**:
+  - WebSockets con Supabase Realtime
+  - Actualizaciones instantáneas de mensajes
+  - Sincronización automática de estados
+  - Indicadores de presencia de usuarios
+- **Optimización de Performance**:
+  - Lazy loading de componentes
+  - Memoización con React.memo y useMemo
+  - Virtualización de listas largas con FlatList
+  - Optimistic updates en el chat
+  - Caché inteligente de datos
+- **Gestión de Estado Robusta**:
+  - Redux Toolkit para estado global de calculadora
+  - Context API para autenticación, chat y notificaciones
+  - Estado local optimizado con hooks personalizados
+- **Manejo de Errores Profesional**:
+  - Error Boundaries para captura de errores
+  - Sistema de logging estructurado
+  - Recuperación automática de errores
+  - Feedback visual al usuario
+- **Seguridad Empresarial**:
+  - Autenticación JWT con Supabase Auth
+  - Row Level Security (RLS) en base de datos
+  - Políticas granulares de acceso
+  - Validación de datos en cliente y servidor
+  - Sanitización de inputs
+- **Internacionalización (i18n)**:
+  - Soporte multiidioma con i18next
+  - Español e inglés configurados
+  - Fácil extensión a más idiomas
 
-## 🚀 Tecnologías Utilizadas
+## 🚀 Stack Tecnológico
 
 ### Frontend
-- **React Native 0.74** - Framework principal
-- **Expo 51** - Plataforma de desarrollo
-- **TypeScript** - Tipado estático
-- **React Navigation** - Navegación
-- **Zustand** - Gestión de estado global
-- **TanStack Query** - Gestión de estado del servidor
+- **React Native 0.79.1** - Framework principal para desarrollo móvil
+- **Expo 53** - Plataforma de desarrollo y herramientas
+- **TypeScript 5.8** - Tipado estático para mayor seguridad
+- **Expo Router 5.1** - Navegación basada en sistema de archivos
+- **React Navigation 7** - Navegación avanzada (tabs, stack, drawer)
+- **Redux Toolkit 2.9** - Gestión de estado global (calculadora)
+- **React Context API** - Gestión de estado (auth, chat, notificaciones)
 
-### Backend
-- **Supabase** - Backend as a Service
-- **PostgreSQL** - Base de datos
-- **Row Level Security** - Seguridad a nivel de fila
-- **Real-time subscriptions** - Actualizaciones en tiempo real
+### Backend & Base de Datos
+- **Supabase 2.57** - Backend as a Service completo
+  - **PostgreSQL** - Base de datos relacional robusta
+  - **Supabase Auth** - Sistema de autenticación
+  - **Supabase Realtime** - WebSockets para tiempo real
+  - **Supabase Storage** - Almacenamiento de archivos
+  - **Row Level Security (RLS)** - Seguridad a nivel de fila
+  - **Políticas RLS** - Control granular de acceso
+
+### UI/UX
+- **Expo Vector Icons** - Iconos (Lucide, MaterialIcons, etc.)
+- **Lucide React Native** - Iconos modernos y consistentes
+- **Expo Linear Gradient** - Gradientes nativos
+- **Expo Blur** - Efectos de desenfoque
+- **React Native Gesture Handler** - Gestos nativos
+- **React Native Reanimated** - Animaciones de alto rendimiento
+- **React Native Safe Area Context** - Manejo de áreas seguras
+
+### Funcionalidades Nativas
+- **Expo Image Picker** - Selección de imágenes y cámara
+- **Expo Document Picker** - Selección de documentos
+- **Expo Camera** - Acceso a cámara nativa
+- **Expo Media Library** - Acceso a galería
+- **Expo AV** - Reproducción y grabación de audio/video
+- **Expo Notifications** - Notificaciones push
+- **Expo Haptics** - Feedback háptico
+- **Async Storage** - Almacenamiento local persistente
+
+### Internacionalización
+- **i18next 25.5** - Framework de internacionalización
+- **react-i18next 15.7** - Integración con React
 
 ### DevOps & Deployment
-- **Netlify** - Hosting y deployment
-- **GitHub Actions** - CI/CD
-- **ESLint & Prettier** - Calidad de código
-- **Environment Variables** - Configuración por entorno
+- **Netlify** - Hosting web y deployment automatizado
+  - CI/CD automático desde Git
+  - Preview deployments para PRs
+  - Variables de entorno por rama
+- **EAS (Expo Application Services)** - Build y deployment móvil
+- **GitHub** - Control de versiones
+- **ESLint 9.35** - Linting y calidad de código
+- **Prettier 3.6** - Formateo automático de código
+- **TypeScript Compiler** - Validación de tipos
+
+### Herramientas de Desarrollo
+- **Metro Bundler** - Bundler optimizado para React Native
+- **Babel** - Transpilación de JavaScript
+- **dotenv** - Gestión de variables de entorno
+- **React DevTools** - Debugging de componentes
 
 ## 📋 Requisitos Previos
 
@@ -141,22 +250,127 @@ npm run deploy:preview
 
 ```
 elmecV2-Demo/
-├── components/           # Componentes reutilizables
-│   ├── ui/              # Componentes de UI básicos
-│   └── forms/           # Componentes de formularios
-├── screens/             # Pantallas de la aplicación
-│   ├── auth/           # Pantallas de autenticación
-│   ├── admin/          # Pantallas de administración
-│   └── user/           # Pantallas de usuario
-├── navigation/          # Configuración de navegación
-├── store/              # Gestión de estado (Zustand)
-├── services/           # Servicios y APIs
-├── utils/              # Utilidades y helpers
-│   ├── errorHandler.ts # Manejo de errores
-│   └── logger.ts       # Sistema de logging
-├── types/              # Definiciones de TypeScript
-├── assets/             # Recursos estáticos
-└── supabase/           # Configuración de Supabase
+├── app/                          # Expo Router - Rutas basadas en archivos
+│   ├── (tabs)/                  # Tab Navigator principal
+│   │   ├── index.tsx           # Home - Lista de solicitudes
+│   │   ├── requests.tsx        # Gestión de solicitudes
+│   │   ├── chat/               # Sistema de chat
+│   │   │   ├── index.tsx      # Lista de conversaciones
+│   │   │   ├── [roomId].tsx   # Sala de chat específica
+│   │   │   └── _layout.tsx    # Layout del chat
+│   │   ├── directory.tsx       # Directorio de contactos
+│   │   ├── calculator.tsx      # Acceso a calculadoras
+│   │   ├── profile.tsx         # Perfil de usuario
+│   │   └── _layout.tsx         # Layout de tabs
+│   ├── auth/                    # Flujo de autenticación
+│   │   ├── index.tsx           # Pantalla inicial de auth
+│   │   ├── login.tsx           # Login
+│   │   ├── register.tsx        # Registro
+│   │   └── _layout.tsx         # Layout de auth
+│   ├── calculator/              # Módulo de calculadoras
+│   │   ├── index.tsx           # Menú de calculadoras
+│   │   ├── FresadoScreen.tsx   # Calculadora de fresado
+│   │   ├── BarrenadoScreen.tsx # Calculadora de barrenado
+│   │   ├── SettingsCalculadoraScreen.tsx
+│   │   └── _layout.tsx         # Layout de calculadora
+│   ├── _layout.tsx              # Root layout con providers
+│   ├── index.tsx                # Entry point
+│   └── +not-found.tsx           # Página 404
+│
+├── components/                   # Componentes reutilizables
+│   ├── AdminDashboard.tsx       # Dashboard administrativo
+│   ├── AdvancedSearchComponent.tsx # Búsqueda avanzada
+│   ├── MessageBubble.tsx        # Burbuja de mensaje en chat
+│   ├── TypingIndicator.tsx      # Indicador de escritura
+│   ├── EmojiPicker.tsx          # Selector de emojis
+│   ├── FileUploadComponent.tsx  # Subida de archivos
+│   ├── NotificationToast.tsx    # Notificaciones toast
+│   ├── HeaderComponent.tsx      # Header personalizado
+│   ├── HealthCheck.tsx          # Verificación de salud del sistema
+│   ├── ErrorBoundary.tsx        # Captura de errores
+│   ├── ContextProviders.tsx     # Proveedores de contexto
+│   ├── api.ts                   # Cliente API
+│   └── calculator/              # Componentes de calculadora
+│       ├── CalculatorView.tsx   # Vista principal calculadora
+│       └── BarrenadoView.tsx    # Vista de barrenado
+│
+├── contexts/                     # Context API para estado global
+│   ├── AuthContext.tsx          # Contexto de autenticación
+│   │   - login, register, logout
+│   │   - Usuario autenticado
+│   │   - Sesión activa
+│   ├── ChatContext.tsx          # Contexto de chat
+│   │   - Salas de chat
+│   │   - Mensajes en tiempo real
+│   │   - Indicadores de escritura
+│   │   - Notificaciones de chat
+│   └── NotificationContext.tsx  # Contexto de notificaciones
+│       - Sistema de notificaciones
+│       - Toast messages
+│       - Push notifications
+│
+├── store/                        # Redux Toolkit
+│   ├── index.ts                 # Configuración del store
+│   └── calculatorSlice.ts       # Estado de calculadora
+│       - Configuraciones guardadas
+│       - Historial de cálculos
+│       - Preferencias
+│
+├── hooks/                        # Custom Hooks
+│   ├── useChat.ts               # Hook para chat
+│   ├── useSupabaseHealth.ts     # Hook para health check
+│   └── useFrameworkReady.ts     # Hook de inicialización
+│
+├── lib/                          # Librerías y configuración
+│   └── supabase.ts              # Cliente de Supabase
+│       - Configuración de auth
+│       - Realtime setup
+│       - Storage setup
+│
+├── constants/                    # Constantes y tipos
+│   ├── types.ts                 # Tipos TypeScript globales
+│   ├── commons.ts               # Constantes comunes
+│   └── calculator.ts            # Constantes de calculadora
+│
+├── i18n/                         # Internacionalización
+│   └── index.ts                 # Configuración i18next
+│       - Español (es)
+│       - Inglés (en)
+│
+├── assets/                       # Recursos estáticos
+│   └── images/                  # Imágenes e iconos
+│       ├── icon.png
+│       └── favicon.png
+│
+├── android/                      # Configuración Android
+│   ├── app/
+│   │   ├── build.gradle
+│   │   └── src/main/
+│   │       ├── AndroidManifest.xml
+│   │       ├── java/            # Código nativo Kotlin
+│   │       └── res/             # Recursos Android
+│   ├── gradle.properties
+│   └── settings.gradle
+│
+├── docs/                         # Documentación del proyecto
+│   ├── mvp-roadmap.md           # Roadmap del MVP
+│   ├── demo-users-guide.md      # Guía de usuarios demo
+│   ├── demo-script.md           # Script de demostración
+│   ├── demo-preparation-checklist.md
+│   ├── demo-quick-checklist.md
+│   ├── demo-express-guide.md
+│   ├── demo-data-validation.md
+│   ├── database-architecture.md # Arquitectura de BD
+│   └── data-structures-analysis.md
+│
+├── app.json                      # Configuración de Expo
+├── eas.json                      # Configuración de EAS Build
+├── package.json                  # Dependencias del proyecto
+├── tsconfig.json                 # Configuración TypeScript
+├── eslint.config.js              # Configuración ESLint
+├── metro.config.js               # Configuración Metro bundler
+├── netlify.toml                  # Configuración Netlify
+└── README.md                     # Este archivo
 ```
 
 ## 🧪 Testing
