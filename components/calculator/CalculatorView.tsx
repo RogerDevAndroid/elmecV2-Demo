@@ -378,7 +378,8 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
         style={[
           styles.keyboardContainer,
           {
-            height: calculator.keyboardHeight,
+            // Cast para evitar errores de tipos con valores porcentuales
+            height: calculator.keyboardHeight as any,
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
           },
@@ -462,7 +463,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
         style={[
           styles.scrollContainer,
           {
-            height: calculator.scrollHeight,
+            height: calculator.scrollHeight as any,
             backgroundColor: colors.background,
           },
         ]}

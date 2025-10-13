@@ -68,14 +68,14 @@ export default function Directory() {
       }
 
       // Filtrar el usuario actual en el frontend
-      const filteredData = (data || []).filter(
-        person => person.id !== currentUser?.id
+      const filteredData = (data as User[] || []).filter(
+        (person: User) => person.id !== currentUser?.id
       );
       setPersonnel(filteredData);
     } catch (error) {
       console.error('Error loading personnel:', error);
       setError(
-        `Error al cargar el directorio: ${error.message || 'Error desconocido'}`
+        `Error al cargar el directorio: ${error instanceof Error ? error.message : 'Error desconocido'}`
       );
     } finally {
       setLoading(false);

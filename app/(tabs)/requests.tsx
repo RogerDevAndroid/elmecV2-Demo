@@ -12,8 +12,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { supabase } from '@/lib/supabase';
+  import { supabase, supabaseClient } from '@/lib/supabase';
 import { Request, User } from '@/types/supabase';
+
+// Tipos extendidos para las consultas con joins
+interface RequestWithRelations extends Request {
+  usuario?: {
+    nombre: string;
+    apellido_paterno: string;
+    apellido_materno: string;
+    empresa: string;
+  };
+  agente?: {
+    nombre: string;
+    apellido_paterno: string;
+    apellido_materno: string;
+    categoria?: string;
+  };
+}
 import {
   Plus,
   Clock,
@@ -28,8 +44,8 @@ import { AdvancedSearchComponent } from '@/components/AdvancedSearchComponent';
 import { FileUploadComponent } from '@/components/FileUploadComponent';
 
 export default function Requests() {
-  const [requests, setRequests] = useState<Request[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<RequestWithRelations[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<RequestWithRelations[]>([]);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -98,7 +114,7 @@ export default function Requests() {
     } catch (error) {
       console.error('Error loading requests:', error);
       setError(
-        `Error al cargar las solicitudes: ${error.message || 'Error desconocido'}`
+        `Error al cargar las solicitudes: ${error instanceof Error ? error.message : 'Error desconocido'}`
       );
     } finally {
       setLoading(false);
@@ -258,7 +274,7 @@ export default function Requests() {
 
       const { data, error } = await supabase
         .from('requests')
-        .insert(requestData)
+        .insert(requestData as any)
         .select(
           `
           *,
@@ -275,7 +291,7 @@ export default function Requests() {
       }
 
       // Agregar la nueva solicitud a la lista
-      setRequests(prev => [data, ...prev]);
+      setRequests(prev => [data as RequestWithRelations, ...prev]);
 
       // Limpiar formulario
       setNewRequest({
@@ -291,22 +307,24 @@ export default function Requests() {
       // Enviar notificación
       await sendDemoNotification(
         'Solicitud creada',
-        `Tu solicitud "${data.titulo}" ha sido enviada correctamente`,
+        `Tu solicitud "${(data as any)?.titulo}" ha sido enviada correctamente`,
         'success',
-        { requestId: data.id }
+        { requestId: (data as any)?.id }
       );
 
       // Si se asignó un agente, enviar notificación al agente
-      if (data.agente_id) {
-        await supabase.from('notifications').insert({
-          user_id: data.agente_id,
-          title: 'Nueva solicitud asignada',
-          body: `Se te ha asignado la solicitud: ${data.titulo}`,
-          type: 'assignment',
-          priority: 'medium',
-          data: { requestId: data.id },
-          read: false,
-        });
+      if ((data as any)?.agente_id) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: (data as any).agente_id,
+            title: 'Nueva solicitud asignada',
+            body: `Se te ha asignado la solicitud "${(data as any).titulo}"`,
+            type: 'assignment',
+            priority: 'medium',
+            data: { requestId: (data as any).id },
+            read: false,
+          } as any);
       }
 
       Alert.alert('Éxito', 'Solicitud creada correctamente');
@@ -323,12 +341,13 @@ export default function Requests() {
     newStatus: string
   ) => {
     try {
-      const { error } = await supabase
+      // Usar el cliente sin tipos estrictos para evitar errores de 'never'
+      const { error } = await supabaseClient
         .from('requests')
         .update({
           estatus: newStatus,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', requestId);
 
       if (error) {

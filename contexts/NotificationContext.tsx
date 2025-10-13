@@ -15,7 +15,10 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
-  }),
+    // Campos adicionales requeridos por los tipos recientes de Expo Notifications
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }) as any,
 });
 
 export interface InAppNotification {
@@ -87,8 +90,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [inAppNotifications, setInAppNotifications] = useState<
     InAppNotification[]
   >([]);
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   const unreadCount = inAppNotifications.filter(n => !n.read).length;
 
@@ -171,7 +174,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.log(
         'Push token not available (likely missing project ID):',
-        error.message
+        error instanceof Error ? error.message : String(error)
       );
       return null;
     }

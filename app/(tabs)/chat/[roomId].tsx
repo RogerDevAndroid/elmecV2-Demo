@@ -384,7 +384,7 @@ export default function ChatRoom() {
       sendTypingIndicator(roomId!, false);
     }, 2000);
 
-    setTypingTimeout(timeout);
+    setTypingTimeout(timeout as any);
   };
 
   const handleSendMessage = async () => {

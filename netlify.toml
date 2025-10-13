@@ -7,8 +7,8 @@
   NPM_VERSION = "9"
   NODE_ENV = "production"
   EXPO_PUBLIC_ENVIRONMENT = "production"
-  EXPO_PUBLIC_SUPABASE_URL = "https://xagpimsaqrwfpsduqzea.supabase.co"
-  EXPO_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_R2GV4BSjcrrzM1VICU13Aw_c0O2yh-A"
+  # Nota: Configura EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY en el entorno de Netlify
+  # (Deploy settings > Environment). Evitamos hardcodear aquí para no bloquear el login.
 
 # Redirects for SPA
 [[redirects]]
@@ -24,7 +24,8 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://xagpimsaqrwfpsduqzea.supabase.co wss://xagpimsaqrwfpsduqzea.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self';"
+    # Permitir conexión a cualquier proyecto de Supabase (https/wss) para evitar bloqueos del login.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self';"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
 # Cache static assets
