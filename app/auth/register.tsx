@@ -53,7 +53,25 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const success = await register(formData);
+      // Map form data to User type structure
+      const userData = {
+        email: formData.correoElectronico,
+        empresa: formData.empresa,
+        nombre: formData.nombre,
+        apellido_paterno: formData.apellidoPaterno,
+        apellido_materno: formData.apellidoMaterno,
+        correo_electronico: formData.correoElectronico,
+        celular: formData.celular,
+        ciudad: formData.ciudad,
+        estado: formData.estado,
+        rol: 'customer' as const,
+        activo: true,
+        is_online: false,
+        last_seen: new Date().toISOString(),
+        password: formData.password,
+      };
+
+      const success = await register(userData);
       if (success) {
         Alert.alert('Éxito', 'Registro exitoso', [
           { text: 'OK', onPress: () => router.replace('/(tabs)') },
@@ -115,8 +133,8 @@ export default function Register() {
               style={styles.input}
               placeholder="Apellido Paterno"
               placeholderTextColor="#9ca3af"
-              value={formData.apellido_paterno}
-              onChangeText={value => updateField('apellido_paterno', value)}
+              value={formData.apellidoPaterno}
+              onChangeText={value => updateField('apellidoPaterno', value)}
             />
           </View>
 
@@ -126,8 +144,8 @@ export default function Register() {
               style={styles.input}
               placeholder="Apellido Materno"
               placeholderTextColor="#9ca3af"
-              value={formData.apellido_materno}
-              onChangeText={value => updateField('apellido_materno', value)}
+              value={formData.apellidoMaterno}
+              onChangeText={value => updateField('apellidoMaterno', value)}
             />
           </View>
 
@@ -137,8 +155,8 @@ export default function Register() {
               style={styles.input}
               placeholder="Correo Electrónico"
               placeholderTextColor="#9ca3af"
-              value={formData.correo_electronico}
-              onChangeText={value => updateField('correo_electronico', value)}
+              value={formData.correoElectronico}
+              onChangeText={value => updateField('correoElectronico', value)}
               keyboardType="email-address"
               autoCapitalize="none"
             />

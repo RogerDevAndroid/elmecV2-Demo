@@ -97,7 +97,7 @@ export const AdminDashboard: React.FC = () => {
     <View style={styles.statCard}>
       <View style={styles.statHeader}>
         <View style={[styles.statIcon, { backgroundColor: `${color}15` }]}>
-          {React.cloneElement(icon as React.ReactElement, { size: 24, color })}
+          {React.cloneElement(icon as React.ReactElement, { size: 24, color } as any)}
         </View>
         {trend && (
           <View

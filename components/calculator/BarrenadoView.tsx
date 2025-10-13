@@ -324,7 +324,8 @@ export const BarrenadoView: React.FC<BarrenadoViewProps> = ({
         style={[
           styles.keyboardContainer,
           {
-            height: calculator.keyboardHeight,
+            // Cast para evitar errores de tipos en alturas porcentuales
+            height: calculator.keyboardHeight as any,
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
           },
@@ -407,7 +408,7 @@ export const BarrenadoView: React.FC<BarrenadoViewProps> = ({
         style={[
           styles.scrollContainer,
           {
-            height: calculator.scrollHeight,
+            height: calculator.scrollHeight as any,
             backgroundColor: colors.background,
           },
         ]}

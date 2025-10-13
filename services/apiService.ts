@@ -251,7 +251,8 @@ export const logoutUser = async (
     const response = await api.post(URLs.BASE + URLs.LOGOUT, data, {
       headers: { Authorization: `token ${token}` },
     });
-    return {};
+    // API doesn't return a token on logout; return an empty token to satisfy the TS signature
+    return { token: '' };
   } catch (error) {
     console.log('error');
     console.log(error);

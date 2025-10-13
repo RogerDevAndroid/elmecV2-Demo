@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseClient } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
 import { ChatRoom, Message, User } from '@/types/supabase';
@@ -206,7 +206,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
           const messageWithUser: ChatMessage = {
             ...newMessage,
-            user: userData,
+            user: userData || undefined,
             isDelivered: true,
             isRead: false,
           };
@@ -333,7 +333,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }));
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('messages')
         .insert({
           chat_room_id: roomId,
@@ -367,18 +367,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Replace optimistic message with real message
-      setMessages(prev => ({
-        ...prev,
-        [roomId]:
-          prev[roomId]?.map(msg =>
-            msg.localId === tempId
-              ? { ...data, user: data.user, isDelivered: true, isRead: false }
-              : msg
-          ) || [],
-      }));
+      if (data) {
+        setMessages(prev => ({
+          ...prev,
+          [roomId]:
+            prev[roomId]?.map(msg =>
+              msg.localId === tempId
+                ? { ...(data as any), user: (data as any).user, isDelivered: true, isRead: false }
+                : msg
+            ) || [],
+        }));
+      }
 
       // Update chat room's last message and timestamp
-      await supabase
+      await supabaseClient
         .from('chat_rooms')
         .update({
           last_message: {
@@ -449,7 +451,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Create new chat room
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseClient
         .from('chat_rooms')
         .insert({
           tipo: requestId ? 'support' : 'general',
@@ -458,7 +460,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           is_active: true,
           metadata: {
             participant_names: [
-              user.full_name || user.email,
+              (`${user.nombre} ${user.apellido_paterno ?? ''} ${user.apellido_materno ?? ''}`.trim() || user.email),
               participantName,
             ],
           },
@@ -556,7 +558,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const deleteMessage = async (messageId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('messages')
         .update({
           is_deleted: true,
@@ -593,7 +595,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const editMessage = async (messageId: string, newMessage: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('messages')
         .update({
           message: newMessage,

@@ -67,7 +67,7 @@ const calculatorSlice = createSlice({
       action: PayloadAction<{ field: keyof CalculatorState; value: string }>
     ) => {
       const { field, value } = action.payload;
-      state[field] = value as any;
+      (state as any)[field] = value;
     },
 
     setEditable: (state, action: PayloadAction<number>) => {

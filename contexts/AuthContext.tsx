@@ -30,6 +30,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const BASIC_AUTH = process.env.EXPO_PUBLIC_BASIC_AUTH === 'true';
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,9 +38,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true;
     
-    // Get initial session
+    // Get initial session (or skip in basic mode)
     const initializeAuth = async () => {
       try {
+        if (BASIC_AUTH) {
+          console.log('🔧 Modo BASIC AUTH activo: se omite Supabase Auth');
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!isMounted) return;
@@ -68,32 +77,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     initializeAuth();
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-      
-      console.log('🔄 Cambio de autenticación detectado:', event, session ? 'Sesión activa' : 'Sin sesión');
-      setSession(session);
-      
-      if (session?.user && event !== 'TOKEN_REFRESHED') {
-        await loadUserProfile(session.user.id);
-      } else {
-        console.log('🚪 Limpiando estado de usuario...');
-        setUser(null);
-        setLoading(false);
-      }
-    });
+    // Listen for auth changes (skip in basic mode)
+    let subscription: { unsubscribe: () => void } | undefined;
+    if (!BASIC_AUTH) {
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!isMounted) return;
+        
+        console.log('🔄 Cambio de autenticación detectado:', event, session ? 'Sesión activa' : 'Sin sesión');
+        setSession(session);
+        
+        if (session?.user && event !== 'TOKEN_REFRESHED') {
+          await loadUserProfile(session.user.id);
+        } else {
+          console.log('🚪 Limpiando estado de usuario...');
+          setUser(null);
+          setLoading(false);
+        }
+      });
+      subscription = sub;
+    }
 
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      if (subscription) subscription.unsubscribe();
     };
   }, []);
 
   // Computed value for authentication status
-  const isAuthenticated = !!user && !!session;
+  const isAuthenticated = BASIC_AUTH ? !!user : (!!user && !!session);
 
   // Exponer funciones para debugging
   useEffect(() => {
@@ -109,6 +120,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadUserProfile = async (userId: string) => {
     try {
+      if (BASIC_AUTH) {
+        // En modo básico no cargamos perfil desde la base de datos
+        setLoading(false);
+        return;
+      }
       // Avoid loading if already loading or if user is already loaded
       if (user?.id === userId) {
         setLoading(false);
@@ -168,6 +184,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
+      if (BASIC_AUTH) {
+        // Login básico: acepta cualquier email y contraseña no vacíos
+        if (!email || !password) {
+          throw new Error('Credenciales incompletas');
+        }
+        const now = new Date().toISOString();
+        const mockUser: User = {
+          id: `demo-${email}`,
+          email,
+          empresa: 'ELMEC',
+          nombre: email.split('@')[0],
+          apellido_paterno: '',
+          apellido_materno: '',
+          correo_electronico: email,
+          celular: '',
+          ciudad: '',
+          estado: '',
+          rol: 'customer',
+          categoria: undefined,
+          zona: undefined,
+          activo: true,
+          foto: undefined,
+          created_at: now,
+          updated_at: now,
+          last_login: now,
+          is_online: true,
+          last_seen: now,
+        };
+        setUser(mockUser);
+        // En modo básico no usamos sesión Supabase
+        setSession(null);
+        return true;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -214,6 +264,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ): Promise<boolean> => {
     try {
       setLoading(true);
+      if (BASIC_AUTH) {
+        // Registro básico: simula creación de usuario
+        const now = new Date().toISOString();
+        const mockUser: User = {
+          id: `demo-${userData.correo_electronico}`,
+          email: userData.correo_electronico,
+          empresa: userData.empresa || 'ELMEC',
+          nombre: userData.nombre,
+          apellido_paterno: userData.apellido_paterno || '',
+          apellido_materno: userData.apellido_materno || '',
+          correo_electronico: userData.correo_electronico,
+          celular: userData.celular || '',
+          ciudad: userData.ciudad || '',
+          estado: userData.estado || '',
+          rol: 'customer',
+          categoria: userData.categoria,
+          zona: userData.zona,
+          activo: true,
+          foto: undefined,
+          created_at: now,
+          updated_at: now,
+          last_login: now,
+          is_online: true,
+          last_seen: now,
+        };
+        setUser(mockUser);
+        setSession(null);
+        return true;
+      }
 
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -276,40 +355,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log('🔄 Iniciando proceso de logout...');
       setLoading(true);
 
-      // Update user status to offline
-      if (user) {
-        console.log('👤 Actualizando estado del usuario a offline...');
-        try {
-          const updateData = {
-            is_online: false,
-            last_seen: new Date().toISOString(),
-          };
-          const { error: updateError } = await (supabase as any)
-            .from('users')
-            .update(updateData)
-            .eq('id', user.id);
-          
-          if (updateError) {
-            console.error('❌ Error updating user status on logout:', updateError);
-          } else {
-            console.log('✅ Estado del usuario actualizado correctamente');
-          }
-        } catch (updateErr) {
-          console.error('❌ Failed to update user status on logout:', updateErr);
-        }
-      }
-
-      console.log('🚪 Cerrando sesión en Supabase...');
-      const { error } = await supabase.auth.signOut();
-      
-      // Clear local state regardless of signOut result
-      setSession(null);
-      setUser(null);
-      
-      if (error) {
-        console.error('❌ Logout error:', error);
+      if (BASIC_AUTH) {
+        // Logout básico: limpiar estado local
+        setSession(null);
+        setUser(null);
       } else {
-        console.log('✅ Sesión cerrada correctamente en Supabase');
+        // Update user status to offline
+        if (user) {
+          console.log('👤 Actualizando estado del usuario a offline...');
+          try {
+            const updateData = {
+              is_online: false,
+              last_seen: new Date().toISOString(),
+            };
+            const { error: updateError } = await (supabase as any)
+              .from('users')
+              .update(updateData)
+              .eq('id', user.id);
+            
+            if (updateError) {
+              console.error('❌ Error updating user status on logout:', updateError);
+            } else {
+              console.log('✅ Estado del usuario actualizado correctamente');
+            }
+          } catch (updateErr) {
+            console.error('❌ Failed to update user status on logout:', updateErr);
+          }
+        }
+
+        console.log('🚪 Cerrando sesión en Supabase...');
+        const { error } = await supabase.auth.signOut();
+        
+        // Clear local state regardless of signOut result
+        setSession(null);
+        setUser(null);
+        
+        if (error) {
+          console.error('❌ Logout error:', error);
+        } else {
+          console.log('✅ Sesión cerrada correctamente en Supabase');
+        }
       }
     } catch (error) {
       console.error('❌ Logout error:', error);

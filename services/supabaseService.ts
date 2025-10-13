@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseClient } from '@/lib/supabase';
 import {
   User,
   Request,
@@ -6,6 +6,12 @@ import {
   Message,
   Notification,
 } from '@/types/supabase';
+import {
+  MessageUpdate,
+  NotificationUpdate,
+  UserUpdate,
+  RequestUpdate,
+} from '@/types/supabase-helpers';
 
 export class SupabaseService {
   // Authentication Services
@@ -24,10 +30,10 @@ export class SupabaseService {
       if (authError) throw authError;
 
       if (authData.user) {
-        // Create user profile
-        const { password, ...userProfile } = userData;
+        // Crear perfil de usuario evitando duplicación de 'email'
+        const { password, email, ...userProfile } = userData as any;
         
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('users')
           .insert({
             id: authData.user.id,
@@ -36,7 +42,9 @@ export class SupabaseService {
             activo: true,
             is_online: false,
             last_seen: new Date().toISOString(),
-          } as any)
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
           .select()
           .single();
 
@@ -144,19 +152,20 @@ export class SupabaseService {
         updated_at: new Date().toISOString(),
       };
 
-      // Fire and forget update - don't block login
-      supabase
-        .from('users')
-        .update(updateData as any)
-        .eq('id', authData.user.id)
-        .then((result: any) => {
-          if (result.error) {
+      // Fire and forget update - don't block login (use IIFE with try/catch to satisfy TS)
+      (async () => {
+        try {
+          const result: any = await supabaseClient
+            .from('users')
+            .update(updateData)
+            .eq('id', authData.user.id);
+          if (result?.error) {
             console.warn('Warning: Could not update user status:', result.error);
           }
-        })
-        .catch((updateErr: any) => {
+        } catch (updateErr) {
           console.warn('Warning: Failed to update user status:', updateErr);
-        });
+        }
+      })();
 
       return userData as User;
     } catch (error: any) {
@@ -182,12 +191,14 @@ export class SupabaseService {
       } = await supabase.auth.getUser();
 
       if (user) {
-        await supabase
+        // @ts-ignore - Supabase type inference issue
+        await supabaseClient
           .from('users')
           .update({
             is_online: false,
             last_seen: new Date().toISOString(),
-          } as any)
+            updated_at: new Date().toISOString()
+          })
           .eq('id', user.id);
       }
 
@@ -225,12 +236,13 @@ export class SupabaseService {
     updates: Partial<User>
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { error } = await supabaseClient
         .from('users')
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', userId);
 
       if (error) throw error;
@@ -330,13 +342,14 @@ export class SupabaseService {
     isOnline: boolean
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { error } = await supabaseClient
         .from('users')
         .update({
           is_online: isOnline,
           last_seen: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', userId);
 
       if (error) throw error;
@@ -350,9 +363,10 @@ export class SupabaseService {
     requestData: Omit<Request, 'id' | 'created_at' | 'updated_at'>
   ): Promise<Request> {
     try {
-      const { data, error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { data, error } = await supabaseClient
         .from('requests')
-        .insert(requestData as any)
+        .insert(requestData)
         .select()
         .single();
 
@@ -470,12 +484,13 @@ export class SupabaseService {
     status: string
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { error } = await supabaseClient
         .from('requests')
         .update({
           estatus: status,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', requestId);
 
       if (error) throw error;
@@ -579,7 +594,8 @@ export class SupabaseService {
     requestId?: string
   ): Promise<ChatRoom> {
     try {
-      const { data, error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { data, error } = await supabaseClient
         .from('chat_rooms')
         .insert({
           tipo,
@@ -587,7 +603,7 @@ export class SupabaseService {
           request_id: requestId,
           is_active: true,
           metadata: {},
-        } as any)
+        })
         .select()
         .single();
 
@@ -607,7 +623,8 @@ export class SupabaseService {
     type: Message['type'] = 'text'
   ): Promise<Message> {
     try {
-      const { data, error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { data, error } = await supabaseClient
         .from('messages')
         .insert({
           chat_room_id: chatRoomId,
@@ -616,14 +633,15 @@ export class SupabaseService {
           message,
           type,
           is_deleted: false,
-        } as any)
+        })
         .select()
         .single();
 
       if (error) throw error;
 
       // Update chat room with last message
-      await supabase
+      // @ts-ignore - Supabase type inference issue
+      await supabaseClient
         .from('chat_rooms')
         .update({
           last_message: {
@@ -634,7 +652,7 @@ export class SupabaseService {
             type: data.type,
           },
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', chatRoomId);
 
       return data as Message;
@@ -657,7 +675,8 @@ export class SupabaseService {
     replyTo?: string
   ): Promise<Message> {
     try {
-      const { data, error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { data, error } = await supabaseClient
         .from('messages')
         .insert({
           chat_room_id: chatRoomId,
@@ -671,7 +690,7 @@ export class SupabaseService {
           audio_duration: audioDuration,
           reply_to: replyTo,
           is_deleted: false,
-        } as any)
+        })
         .select(
           `
           *,
@@ -683,7 +702,8 @@ export class SupabaseService {
       if (error) throw error;
 
       // Update chat room with last message
-      await supabase
+      // @ts-ignore - Supabase type inference issue
+      await supabaseClient
         .from('chat_rooms')
         .update({
           last_message: {
@@ -695,7 +715,7 @@ export class SupabaseService {
             type: data.type,
           },
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', chatRoomId);
 
       return data as Message;
@@ -726,13 +746,14 @@ export class SupabaseService {
 
   static async deleteMessage(messageId: string): Promise<void> {
     try {
-      const { error } = await supabase
+      // @ts-ignore - Supabase type inference issue
+      const { error } = await supabaseClient
         .from('messages')
         .update({
           is_deleted: true,
           message: 'Este mensaje fue eliminado',
           edited_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', messageId);
 
       if (error) throw error;
@@ -747,12 +768,13 @@ export class SupabaseService {
     newMessage: string
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('messages')
         .update({
           message: newMessage,
           edited_at: new Date().toISOString(),
-        } as any)
+          updated_at: new Date().toISOString()
+        })
         .eq('id', messageId);
 
       if (error) throw error;
@@ -767,9 +789,9 @@ export class SupabaseService {
     notificationData: Omit<Notification, 'id' | 'created_at'>
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('notifications')
-        .insert(notificationData as any);
+        .insert(notificationData);
 
       if (error) throw error;
     } catch (error) {
@@ -799,12 +821,13 @@ export class SupabaseService {
 
   static async markNotificationAsRead(notificationId: string): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('notifications')
         .update({
           read: true,
           read_at: new Date().toISOString(),
-        } as any)
+          updated_at: new Date().toISOString()
+        })
         .eq('id', notificationId);
 
       if (error) throw error;

@@ -14,6 +14,15 @@ import { useRouter } from 'expo-router';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Search, MessageCircle, Clock, Users, Plus } from 'lucide-react-native';
+import { ChatRoom } from '@/types/supabase';
+
+// Tipo extendido para ChatRoom con información de request
+interface ChatRoomWithRequest extends ChatRoom {
+  requests?: {
+    titulo: string;
+    estatus: string;
+  };
+}
 
 export default function ChatList() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -258,10 +267,10 @@ export default function ChatList() {
                 </View>
 
                 {/* Request info if linked */}
-                {room.request_id && room.request && (
+                {room.request_id && (room as ChatRoomWithRequest).requests && (
                   <View style={styles.requestInfo}>
                     <Text style={styles.requestTitle} numberOfLines={1}>
-                      📋 {room.request.titulo}
+                      📋 {(room as ChatRoomWithRequest).requests!.titulo}
                     </Text>
                   </View>
                 )}

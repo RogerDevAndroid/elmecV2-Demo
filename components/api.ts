@@ -1,4 +1,8 @@
-import axios from 'axios';
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -10,26 +14,27 @@ const api = axios.create({
 
 // Request interceptor for adding auth tokens
 api.interceptors.request.use(
-  config => {
+  (config: InternalAxiosRequestConfig) => {
     // Add any default headers or auth tokens here
     return config;
   },
-  error => {
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor for handling common errors
 api.interceptors.response.use(
-  response => {
+  (response: AxiosResponse) => {
     return response;
   },
-  error => {
+  (error: AxiosError) => {
     // Handle common errors
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    if (status === 401) {
       // Handle unauthorized access
       console.error('Unauthorized access');
-    } else if (error.response?.status >= 500) {
+    } else if (status && status >= 500) {
       // Handle server errors
       console.error('Server error');
     }

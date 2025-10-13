@@ -114,3 +114,7 @@ temp/
 # Supabase
 .branches
 .temp
+
+# Auth invites output (sensibles, no comitear)
+scripts/output/*.json
+scripts/output/*.csv
