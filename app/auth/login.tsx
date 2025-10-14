@@ -136,6 +136,15 @@ export default function Login() {
           )}
         </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => router.push('/auth/forgot-password')}
+          >
+            <Text style={styles.forgotPasswordText}>
+              ¿Olvidaste tu contraseña?
+            </Text>
+          </TouchableOpacity>
+
           {/* Registro oculto para demo */}
         </View>
 
@@ -233,6 +242,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#1e40af',
+  },
+  forgotPasswordButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  forgotPasswordText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textDecorationLine: 'underline',
   },
   registerLink: {
     fontSize: 16,
