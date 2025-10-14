@@ -84,7 +84,6 @@
     "@types/react": "~19.0.10",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
-    "@expo/cli": "0.24.22",
     "dotenv": "^17.2.2",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
@@ -96,5 +95,10 @@
     "serve": "^14.2.5",
     "typescript": "~5.8.3"
   },
-  "overrides": {}
+  "overrides": {
+    "metro": "^0.81.0",
+    "metro-resolver": "^0.81.0",
+    "metro-config": "^0.81.0",
+    "metro-runtime": "^0.81.0"
+  }
 }
