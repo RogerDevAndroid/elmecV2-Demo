@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
+    "name": "ELMEC Mobile App",
+    "slug": "elmec-mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "elmec",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "extra": {
       "eas": {
-        "projectId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        "projectId": "elmec-mobile-app-demo"
       }
     },
     "ios": {
@@ -28,7 +28,7 @@
       [
         "expo-router",
         {
-          "origin": "https://elmec-app.bolt.new/"
+          "origin": "https://your-app.netlify.app/"
         }
       ]
     ],

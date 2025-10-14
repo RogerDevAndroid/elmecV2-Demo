@@ -26,6 +26,8 @@
     "create-auth-invites": "node scripts/create-auth-invites.js",
     "test-password": "node scripts/test-password-policy.js",
     "test-logins": "node scripts/test-logins.js",
+    "test-supabase": "node scripts/test-supabase-connection.js",
+    "setup-supabase": "node scripts/setup-supabase-complete.js",
     "setup-demo": "echo 'Ejecuta la migración insert_complete_demo_data.sql en Supabase SQL Editor'",
     "android": "expo run:android",
     "ios": "expo run:ios"
