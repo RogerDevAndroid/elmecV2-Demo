@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -100,6 +101,32 @@ export default function Home() {
     }
   };
 
+  const handleActivityMenu = () => {
+    Alert.alert(
+      'Actividad Reciente',
+      'Selecciona una opción',
+      [
+        {
+          text: 'Ver todas las solicitudes',
+          onPress: () => router.push('/(tabs)/requests'),
+        },
+        {
+          text: 'Ver solicitudes por estatus',
+          onPress: () => router.push('/profile/requests-by-status'),
+        },
+        {
+          text: 'Nueva solicitud',
+          onPress: () => router.push('/(tabs)/requests'),
+        },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <LinearGradient colors={['#202B52', '#335686']} style={styles.header}>
@@ -160,9 +187,9 @@ export default function Home() {
             <Text style={styles.sectionTitle}>Actividad Reciente</Text>
             <TouchableOpacity
               style={styles.sectionButton}
-              onPress={() => router.push('/(tabs)/requests')}
+              onPress={handleActivityMenu}
             >
-              <Text style={styles.sectionButtonText}>Ver todo</Text>
+              <Text style={styles.sectionButtonText}>Opciones</Text>
               <MoreHorizontal size={20} color="#202B52" />
             </TouchableOpacity>
           </View>
