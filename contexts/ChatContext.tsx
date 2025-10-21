@@ -75,7 +75,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [typingUsers, setTypingUsers] = useState<{
     [roomId: string]: TypingUser[];
   }>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [realtimeChannels, setRealtimeChannels] = useState<{
     [roomId: string]: RealtimeChannel;

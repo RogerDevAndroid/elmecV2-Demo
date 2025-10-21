@@ -28,21 +28,21 @@ export default function Home() {
       title: 'Directorio',
       description: 'Buscar personal',
       icon: Users,
-      color: '#3b82f6',
+      color: '#335686', // Azul medio ELMEC
       route: '/directory',
     },
     {
       title: 'Nueva Solicitud',
       description: 'Crear solicitud',
       icon: FileText,
-      color: '#10b981',
+      color: '#95C3ED', // Azul claro ELMEC
       route: '/requests',
     },
     {
       title: 'Calculadora',
       description: 'Herramientas',
       icon: Calculator,
-      color: '#f59e0b',
+      color: '#202B52', // Azul principal ELMEC
       route: '/calculator',
     },
   ];
@@ -101,7 +101,7 @@ export default function Home() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <LinearGradient colors={['#1e40af', '#3b82f6']} style={styles.header}>
+      <LinearGradient colors={['#202B52', '#335686']} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.userInfo}>
             <Text style={styles.greeting}>¡Hola!</Text>
@@ -110,14 +110,20 @@ export default function Home() {
             </Text>
             <Text style={styles.userCompany}>{user?.empresa}</Text>
           </View>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.nombre?.charAt(0)}
-                {user?.apellido_paterno?.charAt(0)}
-              </Text>
-            </View>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/branding/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
+        </View>
+        <View style={styles.truckContainer}>
+          <Image
+            source={require('@/assets/images/branding/truck.png')}
+            style={styles.truckImage}
+            resizeMode="contain"
+          />
         </View>
       </LinearGradient>
 
@@ -248,6 +254,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#ffffff',
+  },
+  logoContainer: {
+    marginLeft: 16,
+    width: 70,
+    height: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
+  },
+  truckContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 120,
+  },
+  truckImage: {
+    width: '100%',
+    height: '100%',
   },
   content: {
     flex: 1,

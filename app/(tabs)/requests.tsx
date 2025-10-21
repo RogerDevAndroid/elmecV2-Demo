@@ -725,11 +725,10 @@ export default function Requests() {
                 style={styles.typeScroll}
               >
                 {[
-                  { id: 1, name: 'Soporte Técnico' },
-                  { id: 2, name: 'Facturación' },
-                  { id: 3, name: 'Información' },
-                  { id: 4, name: 'Queja' },
-                  { id: 5, name: 'Sugerencia' },
+                  { id: 1, name: 'Ventas' },
+                  { id: 2, name: 'Soporte' },
+                  { id: 3, name: 'Cotización' },
+                  { id: 4, name: 'Rastreo de pedidos' },
                 ].map(type => (
                   <TouchableOpacity
                     key={type.id}
@@ -806,24 +805,6 @@ export default function Requests() {
                   showsHorizontalScrollIndicator={false}
                   style={styles.agentsScroll}
                 >
-                  <TouchableOpacity
-                    style={[
-                      styles.agentChip,
-                      !newRequest.agente_id && styles.agentChipSelected,
-                    ]}
-                    onPress={() =>
-                      setNewRequest(prev => ({ ...prev, agente_id: '' }))
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.agentChipText,
-                        !newRequest.agente_id && styles.agentChipTextSelected,
-                      ]}
-                    >
-                      Asignación automática
-                    </Text>
-                  </TouchableOpacity>
                   {agents.map(agent => (
                     <TouchableOpacity
                       key={agent.id}
