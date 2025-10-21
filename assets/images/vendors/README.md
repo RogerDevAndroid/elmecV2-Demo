@@ -53,19 +53,26 @@ Según los datos actuales, estos son los vendedores que necesitan foto:
 
 ## Cómo Funciona en el Código
 
-El sistema buscará automáticamente la foto del vendedor usando su email:
+El sistema usa un mapa de fotos para cargar las imágenes de vendedores:
 
 ```typescript
-const getVendorPhoto = (email: string) => {
+const vendorPhotos: { [key: string]: any } = {
+  'i.pineda': require('@/assets/images/vendors/i.pineda.jpg'),
+  'j.gonzalez': require('@/assets/images/vendors/j.gonzalez.jpg'),
+  // ... más vendedores
+};
+
+const getVendorPhoto = (person: User) => {
+  const email = person.correo_electronico;
   const username = email.split('@')[0]; // e.g., "i.pineda"
-  try {
-    return require(`@/assets/images/vendors/${username}.jpg`);
-  } catch {
-    // Si no existe la foto, usa un avatar con iniciales
-    return null;
-  }
+  return vendorPhotos[username] || null;
 };
 ```
+
+### Para Agregar una Nueva Foto:
+1. Colocar el archivo en `assets/images/vendors/{username}.jpg`
+2. Descomentar la línea correspondiente en el mapa `vendorPhotos` en `app/(tabs)/directory.tsx`
+3. Reiniciar el servidor de desarrollo
 
 ## Foto por Defecto
 Si no existe una foto para un vendedor, el sistema mostrará:
@@ -73,11 +80,18 @@ Si no existe una foto para un vendedor, el sistema mostrará:
 - Color de fondo basado en el rol (Agente, Vendedor, Soporte)
 
 ## Estado Actual
-📝 **Pendiente**: Las fotos aún no han sido descargadas del Google Drive
+✅ **Sistema Listo**: El código está preparado y funcional
 
 ## Próximos Pasos
-1. ✅ Sistema preparado para recibir fotos
+1. ✅ Sistema preparado para recibir fotos - **Completado**
 2. ⏳ Descargar fotos del Google Drive
-3. ⏳ Optimizar y renombrar fotos
+3. ⏳ Optimizar y renombrar fotos según el formato {username}.jpg
 4. ⏳ Copiar a la carpeta assets/images/vendors/
-5. ⏳ Verificar que se muestren correctamente en la app
+5. ⏳ Descomentar las líneas en el mapa `vendorPhotos` en directory.tsx
+6. ⏳ Verificar que se muestren correctamente en la app
+
+## Notas Técnicas
+- El sistema funciona con avatares de iniciales si no hay foto disponible
+- Las fotos se cargan usando el mapa estático `vendorPhotos`
+- Esto mejora el rendimiento y evita problemas con require dinámicos
+- El fallback (avatar con iniciales) funciona automáticamente

@@ -87,6 +87,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (session?.user) {
       loadChatRooms();
+      setupChatRoomsSubscription();
     }
 
     return () => {
@@ -274,6 +275,75 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       .subscribe();
 
     setRealtimeChannels(prev => ({ ...prev, [roomId]: channel }));
+  };
+
+  const setupChatRoomsSubscription = () => {
+    if (!session?.user) return;
+
+    // Subscribe to chat_rooms table for new rooms
+    const chatRoomsChannel = supabase
+      .channel('chat_rooms_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_rooms',
+        },
+        async (payload) => {
+          const newRoom = payload.new as ChatRoom;
+
+          // Only add if current user is a participant
+          if (newRoom.participants?.includes(session.user.id)) {
+            // Load room details with relations
+            const { data: roomData } = await supabase
+              .from('chat_rooms')
+              .select(`
+                *,
+                requests!chat_rooms_request_id_fkey(titulo, estatus)
+              `)
+              .eq('id', newRoom.id)
+              .single();
+
+            if (roomData) {
+              setChatRooms(prev => [roomData, ...prev]);
+              await loadRoomMessages(newRoom.id);
+              setupRealtimeSubscription(newRoom.id);
+
+              // Notify user about new chat
+              await sendDemoNotification(
+                'Nuevo chat',
+                'Se ha creado una nueva conversación',
+                'info',
+                { roomId: newRoom.id }
+              );
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_rooms',
+        },
+        (payload) => {
+          const updatedRoom = payload.new as ChatRoom;
+
+          // Update room in state
+          setChatRooms(prev =>
+            prev.map(room =>
+              room.id === updatedRoom.id
+                ? { ...room, ...updatedRoom }
+                : room
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    setRealtimeChannels(prev => ({ ...prev, chat_rooms_global: chatRoomsChannel }));
   };
 
   const getMessagePreview = (message: Message): string => {

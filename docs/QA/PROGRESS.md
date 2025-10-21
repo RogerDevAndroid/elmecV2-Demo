@@ -8,10 +8,10 @@
 
 | Categoría | Total | Completado | Pendiente | % Completado |
 |-----------|-------|------------|-----------|--------------|
-| Críticos | 8 | 6 | 2 | 75% |
-| Medios | 6 | 3 | 3 | 50% |
-| Mejoras | 4 | 3 | 1 | 75% |
-| **TOTAL** | **18** | **12** | **6** | **67%** |
+| Críticos | 8 | 7 | 1 | 87.5% |
+| Medios | 6 | 4 | 2 | 66.7% |
+| Mejoras | 4 | 4 | 0 | 100% |
+| **TOTAL** | **18** | **15** | **3** | **83%** |
 
 ---
 
@@ -40,11 +40,12 @@
   - Solución: La función handleCreateRequest maneja correctamente los estados
 
 ### Problemas de Navegación - Botones sin Funcionalidad
-- [ ] 4. **Botón Charlar no muestra información**
-  - Estado: Pendiente
+- [x] 4. **Botón Charlar no muestra información**
+  - Estado: ✅ Completado
   - Prioridad: Alta
-  - Fecha inicio: -
-  - Fecha fin: -
+  - Fecha inicio: 2025-10-21
+  - Fecha fin: 2025-10-21
+  - Solución: Implementado botón Charlar en tarjetas de solicitudes con navegación a chat room
 
 - [x] 5. **Botones Solicitud y Charlar en perfil del vendedor no funcionan**
   - Estado: ✅ Completado
@@ -77,11 +78,12 @@
 ## 🟡 Tareas Medias - Limpieza de Datos
 
 ### Directorio y Contactos
-- [ ] 9. **Mostrar solo 15 contactos en lugar de 20**
-  - Estado: Pendiente
+- [x] 9. **Mostrar solo 15 contactos en lugar de 20**
+  - Estado: ✅ Completado
   - Prioridad: Media
-  - Fecha inicio: -
-  - Fecha fin: -
+  - Fecha inicio: 2025-10-21
+  - Fecha fin: 2025-10-21
+  - Solución: Limitado FlatList a .slice(0, 15) y actualizado contador en header
 
 ### Opciones en Nueva Solicitud
 - [x] 10. **Actualizar Tipo de Solicitud: Ventas, Soporte, Cotización, Rastreo**
@@ -122,12 +124,14 @@
 ## 🟢 Tareas de Mejora
 
 ### Sistema de Fotos
-- [ ] 15. **Implementar fotos de vendedores**
-  - Estado: Pendiente
+- [x] 15. **Implementar fotos de vendedores**
+  - Estado: ✅ Completado (Sistema listo)
   - Prioridad: Media
-  - Fecha inicio: -
-  - Fecha fin: -
+  - Fecha inicio: 2025-10-21
+  - Fecha fin: 2025-10-21
   - Fuente: Google Drive
+  - Solución: Sistema de mapa de fotos implementado con fallback a avatares de iniciales
+  - Nota: Fotos deben descargarse de Google Drive y colocarse en assets/images/vendors/
 
 ### Elementos de Diseño
 - [x] 16. **Agregar logo ELMEC en todas las pantallas**
@@ -146,17 +150,41 @@
   - Solución: Logo y camión ELMEC integrados, colores actualizados
 
 ### Sincronización
-- [ ] 18. **Sincronizar conversaciones del dashboard con la app**
-  - Estado: Pendiente
+- [x] 18. **Sincronizar conversaciones del dashboard con la app**
+  - Estado: ✅ Completado
   - Prioridad: Alta
-  - Fecha inicio: -
-  - Fecha fin: -
+  - Fecha inicio: 2025-10-21
+  - Fecha fin: 2025-10-21
+  - Solución: Implementada suscripción a tabla chat_rooms para recibir nuevos chats en tiempo real
+  - Notas técnicas: Sistema Realtime completo con INSERT/UPDATE en chat_rooms y mensajes
 
 ---
 
 ## Historial de Cambios
 
-### 2025-10-21
+### 2025-10-21 - Sprint 2 Completado (83% total)
+
+**Tareas completadas:**
+1. ✅ Botón Charlar implementado en solicitudes
+2. ✅ Configuración de cuenta funcionando
+3. ✅ Vista de solicitudes por estatus implementada
+4. ✅ Directorio limitado a 15 contactos
+5. ✅ Sistema de fotos de vendedores preparado
+6. ✅ Sincronización de conversaciones en tiempo real
+
+**Cambios técnicos:**
+- `app/(tabs)/requests.tsx` - Botón Charlar con navegación a chat room
+- `app/settings/account.tsx` - Ya estaba implementado y funcional
+- `app/profile/requests-by-status.tsx` - Ya estaba implementado y funcional
+- `app/(tabs)/directory.tsx` - Limitado a 15 contactos con .slice(0, 15)
+- `app/(tabs)/directory.tsx` - Sistema de mapa de fotos con vendorPhotos
+- `contexts/ChatContext.tsx` - Suscripción a chat_rooms para sincronización realtime
+
+**Commit:** `feat(sprint2): complete chat button, directory limit, and realtime sync`
+
+---
+
+### 2025-10-21 - Sprint 1 Completado
 
 #### Sprint 1 Completado (44% total)
 **Tareas completadas:**

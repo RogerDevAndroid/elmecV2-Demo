@@ -178,11 +178,34 @@ export default function Directory() {
     });
   };
 
+  // Mapa de fotos de vendedores
+  // NOTA: Las fotos deben descargarse de Google Drive y colocarse en assets/images/vendors/
+  // Link: https://drive.google.com/drive/folders/1WOi5J9gcRSCnmIQoWVntFLR29HTwmcMX
+  const vendorPhotos: { [key: string]: any } = {
+    // Descomentar las líneas cuando las fotos estén disponibles:
+    // 'i.pineda': require('@/assets/images/vendors/i.pineda.jpg'),
+    // 'j.gonzalez': require('@/assets/images/vendors/j.gonzalez.jpg'),
+    // 'c.rosales': require('@/assets/images/vendors/c.rosales.jpg'),
+    // 'r.martinez': require('@/assets/images/vendors/r.martinez.jpg'),
+    // 'a.diaz': require('@/assets/images/vendors/a.diaz.jpg'),
+    // 'coco.vazquez': require('@/assets/images/vendors/coco.vazquez.jpg'),
+    // 'o.salazar': require('@/assets/images/vendors/o.salazar.jpg'),
+    // 'g.rosales': require('@/assets/images/vendors/g.rosales.jpg'),
+    // 'e.navarrete': require('@/assets/images/vendors/e.navarrete.jpg'),
+    // 'o.pena': require('@/assets/images/vendors/o.pena.jpg'),
+    // 'a.cano': require('@/assets/images/vendors/a.cano.jpg'),
+    // 'r.larrea': require('@/assets/images/vendors/r.larrea.jpg'),
+    // 'a.licona': require('@/assets/images/vendors/a.licona.jpg'),
+    // 'i.munoz': require('@/assets/images/vendors/i.munoz.jpg'),
+  };
+
   const getVendorPhoto = (person: User) => {
     // Intentar cargar la foto del vendedor basada en su email
-    // Las fotos deben estar en assets/images/vendors/{username}.jpg
-    // Por ahora retorna null hasta que las fotos estén disponibles
-    return null;
+    const email = person.correo_electronico;
+    const username = email.split('@')[0]; // e.g., "i.pineda"
+
+    // Buscar en el mapa de fotos
+    return vendorPhotos[username] || null;
   };
 
   const getInitials = (person: User) => {
@@ -373,7 +396,7 @@ export default function Directory() {
       <View style={styles.header}>
         <Text style={styles.title}>Directorio</Text>
         <Text style={styles.subtitle}>
-          {personnel.length} personas disponibles
+          Mostrando {Math.min(filteredPersonnel.length, 15)} de {personnel.length} personas
         </Text>
       </View>
 
@@ -460,7 +483,7 @@ export default function Directory() {
       )}
 
       <FlatList
-        data={filteredPersonnel}
+        data={filteredPersonnel.slice(0, 15)}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item: person }) => (
           <PersonCard person={person} onCall={handleCall} onMessage={handleWhatsApp} />
