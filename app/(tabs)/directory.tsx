@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, TextInput, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, TextInput, TouchableOpacity, Alert, Linking, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useChat } from '@/hooks/useChat';
@@ -178,14 +178,42 @@ export default function Directory() {
     });
   };
 
+  const getVendorPhoto = (person: User) => {
+    // Intentar cargar la foto del vendedor basada en su email
+    // Las fotos deben estar en assets/images/vendors/{username}.jpg
+    // Por ahora retorna null hasta que las fotos estén disponibles
+    return null;
+  };
+
+  const getInitials = (person: User) => {
+    const firstInitial = person.nombre?.charAt(0) || '';
+    const lastInitial = person.apellido_paterno?.charAt(0) || '';
+    return `${firstInitial}${lastInitial}`.toUpperCase();
+  };
+
   // Componente memoizado para optimizar el rendimiento
   const PersonCard = React.memo(({ person, onCall, onMessage }: {
     person: User;
     onCall: (phone: string) => void;
     onMessage: (phone: string) => void;
-  }) => (
+  }) => {
+    const photo = getVendorPhoto(person);
+
+    return (
     <View style={styles.personCard}>
       <View style={styles.personHeader}>
+        {/* Avatar */}
+        <View style={styles.avatarContainer}>
+          {photo ? (
+            <Image source={photo} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarText}>{getInitials(person)}</Text>
+            </View>
+          )}
+          {person.is_online && <View style={styles.avatarOnlineIndicator} />}
+        </View>
+
         <View style={styles.personInfo}>
           <View style={styles.nameContainer}>
             <Text style={styles.personName}>{getFullName(person)}</Text>
@@ -278,7 +306,8 @@ export default function Directory() {
         </TouchableOpacity>
       </View>
     </View>
-  ));
+    );
+  });
 
   const getCategoryColor = (category: string | null | undefined) => {
     switch (category) {
@@ -619,9 +648,42 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   personHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 12,
+    gap: 16,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#202B52',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
+  },
+  avatarOnlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#10b981',
+    borderWidth: 3,
+    borderColor: '#ffffff',
   },
   personInfo: {
+    flex: 1,
     gap: 8,
   },
   nameContainer: {
