@@ -71,8 +71,7 @@ export default function Profile() {
       subtitle: 'Preferencias de la aplicación',
       icon: Settings,
       color: '#6b7280',
-      onPress: () =>
-        Alert.alert('Próximamente', 'Esta función estará disponible pronto'),
+      onPress: () => router.push('/settings/account'),
     },
     {
       title: 'Notificaciones',
