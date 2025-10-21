@@ -150,14 +150,12 @@ export default function Login() {
 
         <View style={styles.testCredentials}>
           <Text style={styles.testTitle}>Credenciales de prueba (ELMEC):</Text>
-          <Text style={styles.testText}>Contraseña temporal: abc321</Text>
-          <Text style={styles.testText}>Ejemplos de email:</Text>
-          <Text style={styles.testText}>• i.pineda@elmec.com.mx</Text>
+          <Text style={styles.testText}>Contraseña: abc321</Text>
+          <Text style={styles.testText}>Usuarios válidos:</Text>
           <Text style={styles.testText}>• c.rosales@elmec.com.mx</Text>
           <Text style={styles.testText}>• alex.diaz@elmec.com.mx</Text>
-          <Text style={styles.testText}>
-            Si no puedes iniciar sesión, avísanos el correo para verificar el perfil en public.users.
-          </Text>
+          <Text style={styles.testText}>• s.vazquez@elmec.com.mx</Text>
+          <Text style={styles.testText}>• i.munoz@elmec.com.mx</Text>
         </View>
       </ScrollView>
     </LinearGradient>
