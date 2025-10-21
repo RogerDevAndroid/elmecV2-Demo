@@ -133,9 +133,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
        const roomPromises = (data || []).slice(0, 10).map(async (room: any) => {
          try {
            await loadRoomMessages(room.id);
-           // Only setup realtime if we have a valid session
-           if (session?.access_token) {
-             setupRealtimeSubscription(room.id);
+           // Only setup realtime if we have a valid, non-expired session
+           if (session?.access_token && session?.expires_at) {
+             const expiresAt = new Date(session.expires_at * 1000);
+             const now = new Date();
+             if (expiresAt > now) {
+               setupRealtimeSubscription(room.id);
+             } else {
+               console.warn('Session expired, skipping realtime setup for room:', room.id);
+             }
            }
          } catch (roomError) {
            console.error(`Error loading room ${room.id}:`, roomError);
@@ -373,7 +379,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     audioDuration?: number,
     replyTo?: string
   ) => {
-    if (!user || !session) return;
+    if (!user || !session) {
+      console.error('Cannot send message: user not authenticated');
+      throw new Error('Usuario no autenticado');
+    }
+
+    // Validate message
+    if (!message || message.trim().length === 0) {
+      console.error('Cannot send empty message');
+      throw new Error('El mensaje no puede estar vacío');
+    }
+
+    // Validate room exists
+    const room = chatRooms.find(r => r.id === roomId);
+    if (!room) {
+      console.error('Chat room not found:', roomId);
+      throw new Error('Sala de chat no encontrada');
+    }
+
+    console.log('Sending message:', {
+      roomId,
+      messageType,
+      length: message.length,
+      hasFile: !!fileUrl,
+    });
 
     // Optimistic update - add message immediately to UI
     const tempId = `temp_${Date.now()}`;
@@ -409,7 +438,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           chat_room_id: roomId,
           sender_id: user.id,
           sender_name: `${user.nombre} ${user.apellido_paterno}`,
-          message,
+          message: message.trim(),
           type: messageType,
           file_url: fileUrl,
           file_name: fileName,
@@ -428,13 +457,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (error) {
         console.error('Error sending message:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
         // Remove optimistic message on error
         setMessages(prev => ({
           ...prev,
           [roomId]: prev[roomId]?.filter(msg => msg.localId !== tempId) || [],
         }));
-        return;
+        throw new Error(`No se pudo enviar el mensaje: ${error.message}`);
       }
+
+      if (!data) {
+        console.error('No data returned from message insert');
+        setMessages(prev => ({
+          ...prev,
+          [roomId]: prev[roomId]?.filter(msg => msg.localId !== tempId) || [],
+        }));
+        throw new Error('No se recibió confirmación del mensaje enviado');
+      }
+
+      console.log('Message sent successfully:', data.id);
 
       // Replace optimistic message with real message
       if (data) {
@@ -450,20 +496,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Update chat room's last message and timestamp
-      await supabaseClient
-        .from('chat_rooms')
-        .update({
-          last_message: {
-            id: data.id,
-            message: data.message,
-            sender_id: data.sender_id,
-            sender_name: data.sender_name,
-            created_at: data.created_at,
-            type: data.type,
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', roomId);
+      try {
+        const { error: updateError } = await supabaseClient
+          .from('chat_rooms')
+          .update({
+            last_message: {
+              id: data.id,
+              message: data.message,
+              sender_id: data.sender_id,
+              sender_name: data.sender_name,
+              created_at: data.created_at,
+              type: data.type,
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', roomId);
+
+        if (updateError) {
+          console.error('Error updating chat room:', updateError);
+          // Don't fail if room update fails
+        }
+      } catch (updateError) {
+        console.error('Error updating chat room:', updateError);
+        // Don't fail if room update fails
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove optimistic message on error
@@ -471,6 +527,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         ...prev,
         [roomId]: prev[roomId]?.filter(msg => msg.localId !== tempId) || [],
       }));
+      throw error;
     }
   };
 
@@ -502,16 +559,51 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user || !session) throw new Error('User not authenticated');
 
     try {
+      console.log('Creating/finding chat room:', {
+        currentUserId: user.id,
+        participantId,
+        requestId,
+      });
+
+      // Validate participant exists
+      const { data: participantData, error: participantError } = await supabase
+        .from('users')
+        .select('id, nombre, apellido_paterno, apellido_materno, activo')
+        .eq('id', participantId)
+        .single();
+
+      if (participantError || !participantData) {
+        console.error('Participant not found:', participantError);
+        throw new Error('El usuario destinatario no existe o no está disponible');
+      }
+
+      if (!participantData.activo) {
+        throw new Error('El usuario destinatario no está activo');
+      }
+
       // Check if chat room already exists between these participants
-      const { data: existingRoom } = await (supabase as any)
+      // Use proper array comparison for PostgreSQL
+      const { data: existingRooms, error: searchError } = await supabase
         .from('chat_rooms')
         .select('*')
-        .contains('participants', [user.id])
-        .contains('participants', [participantId])
-        .eq('is_active', true)
-        .maybeSingle();
+        .eq('is_active', true);
+
+      if (searchError) {
+        console.error('Error searching for existing rooms:', searchError);
+      }
+
+      // Filter rooms that contain both participants
+      const existingRoom = existingRooms?.find(room => {
+        const participants = room.participants || [];
+        return (
+          participants.includes(user.id) &&
+          participants.includes(participantId) &&
+          participants.length === 2
+        );
+      });
 
       if (existingRoom) {
+        console.log('Found existing chat room:', existingRoom.id);
         // Load messages for existing room if not already loaded
         if (!messages[existingRoom.id]) {
           await loadRoomMessages(existingRoom.id);
@@ -520,19 +612,39 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         return existingRoom.id;
       }
 
+      console.log('No existing room found, creating new one');
+
+      // Validate request exists if provided
+      if (requestId) {
+        const { data: requestData, error: requestError } = await supabase
+          .from('requests')
+          .select('id, titulo, estatus')
+          .eq('id', requestId)
+          .single();
+
+        if (requestError || !requestData) {
+          console.error('Request not found:', requestError);
+          throw new Error('La solicitud asociada no existe');
+        }
+      }
+
+      // Build participant names properly
+      const currentUserName = `${user.nombre || ''} ${user.apellido_paterno || ''} ${user.apellido_materno || ''}`.trim() || user.email || 'Usuario';
+      const otherUserName = participantName || `${participantData.nombre || ''} ${participantData.apellido_paterno || ''} ${participantData.apellido_materno || ''}`.trim() || 'Usuario';
+
       // Create new chat room
       const { data, error } = await supabaseClient
         .from('chat_rooms')
         .insert({
           tipo: requestId ? 'support' : 'general',
           participants: [user.id, participantId],
-          request_id: requestId,
+          request_id: requestId || null,
           is_active: true,
           metadata: {
-            participant_names: [
-              (`${user.nombre} ${user.apellido_paterno ?? ''} ${user.apellido_materno ?? ''}`.trim() || user.email),
-              participantName,
-            ],
+            participant_names: [currentUserName, otherUserName],
+            participant_ids: [user.id, participantId],
+            created_by: user.id,
+            created_at: new Date().toISOString(),
           },
         })
         .select()
@@ -540,24 +652,43 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (error) {
         console.error('Error creating chat room:', error);
-        throw error;
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        throw new Error(`No se pudo crear el chat: ${error.message}`);
       }
+
+      if (!data) {
+        console.error('No data returned from chat room creation');
+        throw new Error('No se recibió confirmación de la creación del chat');
+      }
+
+      console.log('Chat room created successfully:', data.id);
 
       setChatRooms(prev => [data, ...prev]);
       setMessages(prev => ({ ...prev, [data.id]: [] }));
       setupRealtimeSubscription(data.id);
 
       // Send welcome message
-      await sendMessage(
-        data.id,
-        `¡Hola ${participantName}! 👋 ¿En qué puedo ayudarte?`,
-        'system'
-      );
+      try {
+        await sendMessage(
+          data.id,
+          `¡Hola ${otherUserName}! 👋 ¿En qué puedo ayudarte?`,
+          'system'
+        );
+      } catch (msgError) {
+        console.error('Error sending welcome message:', msgError);
+        // Don't fail if welcome message fails
+      }
 
       return data.id;
     } catch (error) {
       console.error('Error creating chat room:', error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      throw new Error(errorMessage);
     }
   };
 

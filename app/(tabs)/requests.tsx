@@ -45,6 +45,7 @@ import {
 } from 'lucide-react-native';
 import { AdvancedSearchComponent } from '@/components/AdvancedSearchComponent';
 import { FileUploadComponent } from '@/components/FileUploadComponent';
+import { uploadMultipleFiles, UploadResult } from '@/utils/fileUpload';
 
 export default function Requests() {
   const [requests, setRequests] = useState<RequestWithRelations[]>([]);
@@ -251,6 +252,11 @@ export default function Requests() {
       return;
     }
 
+    if (newRequest.mensaje.length < 10) {
+      Alert.alert('Error', 'El mensaje debe tener al menos 10 caracteres');
+      return;
+    }
+
     if (!user) {
       Alert.alert('Error', 'Usuario no autenticado');
       return;
@@ -258,28 +264,96 @@ export default function Requests() {
 
     setSubmitting(true);
     try {
-      const requestData = {
-        titulo: newRequest.titulo,
-        mensaje: newRequest.mensaje,
+      // Validate agent exists if selected
+      if (newRequest.agente_id) {
+        const { data: agentExists, error: agentError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', newRequest.agente_id)
+          .eq('rol', 'agent')
+          .eq('activo', true)
+          .single();
+
+        if (agentError || !agentExists) {
+          console.error('Agent validation error:', agentError);
+          Alert.alert('Error', 'El agente seleccionado no está disponible');
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // Upload files to Supabase Storage if any
+      let uploadedFiles: UploadResult[] = [];
+      if (selectedFiles.length > 0) {
+        try {
+          console.log(`Uploading ${selectedFiles.length} file(s) to storage...`);
+          uploadedFiles = await uploadMultipleFiles(
+            selectedFiles,
+            'request-files',
+            `requests/${user.id}`
+          );
+          console.log(`Successfully uploaded ${uploadedFiles.length} file(s)`);
+        } catch (uploadError) {
+          console.error('Error uploading files:', uploadError);
+          Alert.alert(
+            'Error al subir archivos',
+            'No se pudieron subir los archivos adjuntos. ¿Deseas continuar sin archivos?',
+            [
+              { text: 'Cancelar', style: 'cancel', onPress: () => { setSubmitting(false); } },
+              { text: 'Continuar sin archivos', onPress: () => { /* Continue without files */ } }
+            ]
+          );
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // Properly typed request data
+      const requestData: {
+        titulo: string;
+        mensaje: string;
+        tipo: number;
+        prioridad: 'baja' | 'media' | 'alta' | 'urgente';
+        estatus: 'nuevo';
+        usuario_id: string;
+        agente_id: string | null;
+        archivos: string[];
+        tags: string[];
+        metadata: Record<string, any>;
+      } = {
+        titulo: newRequest.titulo.trim(),
+        mensaje: newRequest.mensaje.trim(),
         tipo: newRequest.tipo,
         prioridad: newRequest.prioridad,
-        estatus: 'nuevo' as const,
+        estatus: 'nuevo',
         usuario_id: user.id,
         agente_id: newRequest.agente_id || null,
-        archivos: selectedFiles.map(file => file.uri),
+        archivos: uploadedFiles.map(file => file.url),
         tags: [],
         metadata: {
-          files: selectedFiles.map(file => ({
+          files: uploadedFiles.map(file => ({
             name: file.name,
+            url: file.url,
+            path: file.path,
             type: file.type,
             size: file.size,
           })),
+          created_from: 'mobile',
+          app_version: '1.0.0',
         },
       };
 
-      const { data, error } = await supabase
+      console.log('Creating request with data:', {
+        titulo: requestData.titulo,
+        tipo: requestData.tipo,
+        prioridad: requestData.prioridad,
+        usuario_id: requestData.usuario_id,
+        agente_id: requestData.agente_id,
+      });
+
+      const { data, error } = await supabaseClient
         .from('requests')
-        .insert(requestData as any)
+        .insert(requestData)
         .select(
           `
           *,
@@ -291,9 +365,26 @@ export default function Requests() {
 
       if (error) {
         console.error('Error creating request:', error);
-        Alert.alert('Error', 'No se pudo crear la solicitud');
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        Alert.alert(
+          'Error al crear solicitud',
+          `No se pudo crear la solicitud: ${error.message}\n\nPor favor intenta de nuevo.`
+        );
         return;
       }
+
+      if (!data) {
+        console.error('No data returned from insert');
+        Alert.alert('Error', 'No se recibió confirmación de la solicitud creada');
+        return;
+      }
+
+      console.log('Request created successfully:', data.id);
 
       // Agregar la nueva solicitud a la lista
       setRequests(prev => [data as RequestWithRelations, ...prev]);
@@ -309,33 +400,51 @@ export default function Requests() {
       setSelectedFiles([]);
       setShowNewRequestModal(false);
 
-      // Enviar notificación
-      await sendDemoNotification(
-        'Solicitud creada',
-        `Tu solicitud "${(data as any)?.titulo}" ha sido enviada correctamente`,
-        'success',
-        { requestId: (data as any)?.id }
-      );
+      // Enviar notificación al usuario
+      try {
+        await sendDemoNotification(
+          'Solicitud creada',
+          `Tu solicitud "${data.titulo}" ha sido enviada correctamente`,
+          'success',
+          { requestId: data.id }
+        );
+      } catch (notifError) {
+        console.error('Error sending user notification:', notifError);
+        // No bloquear si falla la notificación
+      }
 
       // Si se asignó un agente, enviar notificación al agente
-      if ((data as any)?.agente_id) {
-        await supabase
-          .from('notifications')
-          .insert({
-            user_id: (data as any).agente_id,
-            title: 'Nueva solicitud asignada',
-            body: `Se te ha asignado la solicitud "${(data as any).titulo}"`,
-            type: 'assignment',
-            priority: 'medium',
-            data: { requestId: (data as any).id },
-            read: false,
-          } as any);
+      if (data.agente_id) {
+        try {
+          const { error: notifError } = await supabase
+            .from('notifications')
+            .insert({
+              user_id: data.agente_id,
+              title: 'Nueva solicitud asignada',
+              body: `Se te ha asignado la solicitud "${data.titulo}"`,
+              type: 'assignment',
+              priority: 'medium',
+              data: { requestId: data.id },
+              read: false,
+            });
+
+          if (notifError) {
+            console.error('Error sending agent notification:', notifError);
+          }
+        } catch (notifError) {
+          console.error('Error sending agent notification:', notifError);
+          // No bloquear si falla la notificación
+        }
       }
 
       Alert.alert('Éxito', 'Solicitud creada correctamente');
     } catch (error) {
-      console.error('Error creating request:', error);
-      Alert.alert('Error', 'Error al crear la solicitud');
+      console.error('Unexpected error creating request:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      Alert.alert(
+        'Error',
+        `Error inesperado al crear la solicitud: ${errorMessage}\n\nPor favor intenta de nuevo.`
+      );
     } finally {
       setSubmitting(false);
     }
