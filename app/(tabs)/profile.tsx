@@ -24,6 +24,7 @@ import {
   Shield,
   CircleHelp as HelpCircle,
   Trash2,
+  FileText,
 } from 'lucide-react-native';
 import { HealthCheck } from '@/components/HealthCheck';
 
@@ -71,8 +72,7 @@ export default function Profile() {
       subtitle: 'Preferencias de la aplicación',
       icon: Settings,
       color: '#6b7280',
-      onPress: () =>
-        Alert.alert('Próximamente', 'Esta función estará disponible pronto'),
+      onPress: () => router.push('/settings/account'),
     },
     {
       title: 'Notificaciones',
@@ -175,6 +175,26 @@ export default function Profile() {
                 </View>
               </View>
             </View>
+          </View>
+
+          {/* Solicitudes por Estatus */}
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={styles.quickActionCard}
+              onPress={() => router.push('/profile/requests-by-status')}
+            >
+              <View style={styles.quickActionIcon}>
+                <FileText size={24} color="#202B52" />
+              </View>
+              <View style={styles.quickActionContent}>
+                <Text style={styles.quickActionTitle}>
+                  Ver Solicitudes por Estatus
+                </Text>
+                <Text style={styles.quickActionSubtitle}>
+                  Organiza tus solicitudes según su estado actual
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
           {/* Demo Notifications Section */}
@@ -589,5 +609,41 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#9ca3af',
     marginTop: 12,
+  },
+  quickActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 16,
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionContent: {
+    flex: 1,
+  },
+  quickActionTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  quickActionSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
+    lineHeight: 20,
   },
 });

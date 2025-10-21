@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useChat } from '@/contexts/ChatContext';
+import { useRouter } from 'expo-router';
   import { supabase, supabaseClient } from '@/lib/supabase';
 import { Request, User } from '@/types/supabase';
 
@@ -39,6 +41,7 @@ import {
   X,
   User as UserIcon,
   Activity as ActivityIndicator,
+  MessageCircle,
 } from 'lucide-react-native';
 import { AdvancedSearchComponent } from '@/components/AdvancedSearchComponent';
 import { FileUploadComponent } from '@/components/FileUploadComponent';
@@ -64,6 +67,8 @@ export default function Requests() {
 
   const { user } = useAuth();
   const { sendDemoNotification } = useNotifications();
+  const { createChatRoom } = useChat();
+  const router = useRouter();
 
   useEffect(() => {
     if (user) {
@@ -429,6 +434,48 @@ export default function Requests() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleStartChat = async (request: RequestWithRelations) => {
+    try {
+      // Determinar el ID del otro participante
+      let otherParticipantId: string;
+      let otherParticipantName: string;
+
+      if (user?.rol === 'customer') {
+        // Si soy cliente, abrir chat con el agente
+        if (!request.agente_id || !request.agente) {
+          Alert.alert(
+            'Sin agente asignado',
+            'Esta solicitud no tiene un agente asignado aún. Espera a que un agente sea asignado para iniciar el chat.'
+          );
+          return;
+        }
+        otherParticipantId = request.agente_id;
+        otherParticipantName = getFullName(request.agente);
+      } else {
+        // Si soy agente o admin, abrir chat con el cliente
+        if (!request.usuario_id || !request.usuario) {
+          Alert.alert('Error', 'No se pudo encontrar el usuario de esta solicitud');
+          return;
+        }
+        otherParticipantId = request.usuario_id;
+        otherParticipantName = getFullName(request.usuario);
+      }
+
+      // Crear o obtener el chat room
+      const roomId = await createChatRoom(
+        otherParticipantId,
+        otherParticipantName,
+        request.id
+      );
+
+      // Navegar al chat
+      router.push(`/chat/${roomId}`);
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      Alert.alert('Error', 'No se pudo iniciar el chat. Intenta de nuevo.');
+    }
+  };
+
   // Simular cambios de estado automáticos para demo
   useEffect(() => {
     if (requests.length === 0) return;
@@ -667,6 +714,18 @@ export default function Requests() {
                 )}
               </View>
             )}
+
+            {/* Botón Charlar */}
+            <TouchableOpacity
+              style={styles.chatButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleStartChat(request);
+              }}
+            >
+              <MessageCircle size={18} color="#ffffff" />
+              <Text style={styles.chatButtonText}>Charlar</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         ))}
 
@@ -725,11 +784,10 @@ export default function Requests() {
                 style={styles.typeScroll}
               >
                 {[
-                  { id: 1, name: 'Soporte Técnico' },
-                  { id: 2, name: 'Facturación' },
-                  { id: 3, name: 'Información' },
-                  { id: 4, name: 'Queja' },
-                  { id: 5, name: 'Sugerencia' },
+                  { id: 1, name: 'Ventas' },
+                  { id: 2, name: 'Soporte' },
+                  { id: 3, name: 'Cotización' },
+                  { id: 4, name: 'Rastreo de pedidos' },
                 ].map(type => (
                   <TouchableOpacity
                     key={type.id}
@@ -806,24 +864,6 @@ export default function Requests() {
                   showsHorizontalScrollIndicator={false}
                   style={styles.agentsScroll}
                 >
-                  <TouchableOpacity
-                    style={[
-                      styles.agentChip,
-                      !newRequest.agente_id && styles.agentChipSelected,
-                    ]}
-                    onPress={() =>
-                      setNewRequest(prev => ({ ...prev, agente_id: '' }))
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.agentChipText,
-                        !newRequest.agente_id && styles.agentChipTextSelected,
-                      ]}
-                    >
-                      Asignación automática
-                    </Text>
-                  </TouchableOpacity>
                   {agents.map(agent => (
                     <TouchableOpacity
                       key={agent.id}
@@ -1108,6 +1148,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#1e40af',
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1e40af',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chatButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
   },
   emptyState: {
     alignItems: 'center',

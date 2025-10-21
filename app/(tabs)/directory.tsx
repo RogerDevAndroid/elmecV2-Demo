@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, TextInput, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, TextInput, TouchableOpacity, Alert, Linking, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useChat } from '@/hooks/useChat';
@@ -178,14 +178,65 @@ export default function Directory() {
     });
   };
 
+  // Mapa de fotos de vendedores
+  // NOTA: Las fotos deben descargarse de Google Drive y colocarse en assets/images/vendors/
+  // Link: https://drive.google.com/drive/folders/1WOi5J9gcRSCnmIQoWVntFLR29HTwmcMX
+  const vendorPhotos: { [key: string]: any } = {
+    // Descomentar las líneas cuando las fotos estén disponibles:
+    // 'i.pineda': require('@/assets/images/vendors/i.pineda.jpg'),
+    // 'j.gonzalez': require('@/assets/images/vendors/j.gonzalez.jpg'),
+    // 'c.rosales': require('@/assets/images/vendors/c.rosales.jpg'),
+    // 'r.martinez': require('@/assets/images/vendors/r.martinez.jpg'),
+    // 'a.diaz': require('@/assets/images/vendors/a.diaz.jpg'),
+    // 'coco.vazquez': require('@/assets/images/vendors/coco.vazquez.jpg'),
+    // 'o.salazar': require('@/assets/images/vendors/o.salazar.jpg'),
+    // 'g.rosales': require('@/assets/images/vendors/g.rosales.jpg'),
+    // 'e.navarrete': require('@/assets/images/vendors/e.navarrete.jpg'),
+    // 'o.pena': require('@/assets/images/vendors/o.pena.jpg'),
+    // 'a.cano': require('@/assets/images/vendors/a.cano.jpg'),
+    // 'r.larrea': require('@/assets/images/vendors/r.larrea.jpg'),
+    // 'a.licona': require('@/assets/images/vendors/a.licona.jpg'),
+    // 'i.munoz': require('@/assets/images/vendors/i.munoz.jpg'),
+  };
+
+  const getVendorPhoto = (person: User) => {
+    // Intentar cargar la foto del vendedor basada en su email
+    const email = person.correo_electronico;
+    const username = email.split('@')[0]; // e.g., "i.pineda"
+
+    // Buscar en el mapa de fotos
+    return vendorPhotos[username] || null;
+  };
+
+  const getInitials = (person: User) => {
+    const firstInitial = person.nombre?.charAt(0) || '';
+    const lastInitial = person.apellido_paterno?.charAt(0) || '';
+    return `${firstInitial}${lastInitial}`.toUpperCase();
+  };
+
   // Componente memoizado para optimizar el rendimiento
   const PersonCard = React.memo(({ person, onCall, onMessage }: {
     person: User;
     onCall: (phone: string) => void;
     onMessage: (phone: string) => void;
-  }) => (
+  }) => {
+    const photo = getVendorPhoto(person);
+
+    return (
     <View style={styles.personCard}>
       <View style={styles.personHeader}>
+        {/* Avatar */}
+        <View style={styles.avatarContainer}>
+          {photo ? (
+            <Image source={photo} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarText}>{getInitials(person)}</Text>
+            </View>
+          )}
+          {person.is_online && <View style={styles.avatarOnlineIndicator} />}
+        </View>
+
         <View style={styles.personInfo}>
           <View style={styles.nameContainer}>
             <Text style={styles.personName}>{getFullName(person)}</Text>
@@ -278,7 +329,8 @@ export default function Directory() {
         </TouchableOpacity>
       </View>
     </View>
-  ));
+    );
+  });
 
   const getCategoryColor = (category: string | null | undefined) => {
     switch (category) {
@@ -344,7 +396,7 @@ export default function Directory() {
       <View style={styles.header}>
         <Text style={styles.title}>Directorio</Text>
         <Text style={styles.subtitle}>
-          {personnel.length} personas disponibles
+          Mostrando {Math.min(filteredPersonnel.length, 15)} de {personnel.length} personas
         </Text>
       </View>
 
@@ -431,7 +483,7 @@ export default function Directory() {
       )}
 
       <FlatList
-        data={filteredPersonnel}
+        data={filteredPersonnel.slice(0, 15)}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item: person }) => (
           <PersonCard person={person} onCall={handleCall} onMessage={handleWhatsApp} />
@@ -619,9 +671,42 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   personHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 12,
+    gap: 16,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#202B52',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
+  },
+  avatarOnlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#10b981',
+    borderWidth: 3,
+    borderColor: '#ffffff',
   },
   personInfo: {
+    flex: 1,
     gap: 8,
   },
   nameContainer: {

@@ -15,6 +15,7 @@ interface AuthContextType {
     }
   ) => Promise<boolean>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -417,6 +418,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         login,
         register,
         logout,
+        refreshUser: async () => {
+          if (user?.id) {
+            await loadUserProfile(user.id);
+          }
+        },
       }}
     >
       {children}

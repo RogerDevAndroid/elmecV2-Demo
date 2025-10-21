@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +18,7 @@ import {
   Clock,
   CircleCheck as CheckCircle,
   CircleAlert as AlertCircle,
+  MoreHorizontal,
 } from 'lucide-react-native';
 
 export default function Home() {
@@ -28,21 +30,21 @@ export default function Home() {
       title: 'Directorio',
       description: 'Buscar personal',
       icon: Users,
-      color: '#3b82f6',
+      color: '#335686', // Azul medio ELMEC
       route: '/directory',
     },
     {
       title: 'Nueva Solicitud',
       description: 'Crear solicitud',
       icon: FileText,
-      color: '#10b981',
+      color: '#95C3ED', // Azul claro ELMEC
       route: '/requests',
     },
     {
       title: 'Calculadora',
       description: 'Herramientas',
       icon: Calculator,
-      color: '#f59e0b',
+      color: '#202B52', // Azul principal ELMEC
       route: '/calculator',
     },
   ];
@@ -99,9 +101,35 @@ export default function Home() {
     }
   };
 
+  const handleActivityMenu = () => {
+    Alert.alert(
+      'Actividad Reciente',
+      'Selecciona una opción',
+      [
+        {
+          text: 'Ver todas las solicitudes',
+          onPress: () => router.push('/(tabs)/requests'),
+        },
+        {
+          text: 'Ver solicitudes por estatus',
+          onPress: () => router.push('/profile/requests-by-status'),
+        },
+        {
+          text: 'Nueva solicitud',
+          onPress: () => router.push('/(tabs)/requests'),
+        },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <LinearGradient colors={['#1e40af', '#3b82f6']} style={styles.header}>
+      <LinearGradient colors={['#202B52', '#335686']} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.userInfo}>
             <Text style={styles.greeting}>¡Hola!</Text>
@@ -110,14 +138,20 @@ export default function Home() {
             </Text>
             <Text style={styles.userCompany}>{user?.empresa}</Text>
           </View>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.nombre?.charAt(0)}
-                {user?.apellido_paterno?.charAt(0)}
-              </Text>
-            </View>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/branding/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
+        </View>
+        <View style={styles.truckContainer}>
+          <Image
+            source={require('@/assets/images/branding/truck.png')}
+            style={styles.truckImage}
+            resizeMode="contain"
+          />
         </View>
       </LinearGradient>
 
@@ -149,7 +183,16 @@ export default function Home() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actividad Reciente</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Actividad Reciente</Text>
+            <TouchableOpacity
+              style={styles.sectionButton}
+              onPress={handleActivityMenu}
+            >
+              <Text style={styles.sectionButtonText}>Opciones</Text>
+              <MoreHorizontal size={20} color="#202B52" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.activityList}>
             {recentActivity.map(item => (
               <View key={item.id} style={styles.activityItem}>
@@ -249,6 +292,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#ffffff',
   },
+  logoContainer: {
+    marginLeft: 16,
+    width: 70,
+    height: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
+  },
+  truckContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 120,
+  },
+  truckImage: {
+    width: '100%',
+    height: '100%',
+  },
   content: {
     flex: 1,
     padding: 24,
@@ -257,11 +321,27 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
     color: '#111827',
-    marginBottom: 16,
+  },
+  sectionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 8,
+  },
+  sectionButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#202B52',
   },
   quickActions: {
     flexDirection: 'row',

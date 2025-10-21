@@ -66,11 +66,10 @@ export const REALTIME_PATHS = {
 
 // Request Types
 export const REQUEST_TYPES = {
-  TECHNICAL_SUPPORT: 1,
-  BILLING_INQUIRY: 2,
-  PRODUCT_INFO: 3,
-  COMPLAINT: 4,
-  SUGGESTION: 5,
+  SALES: 1,              // Ventas
+  SUPPORT: 2,            // Soporte
+  QUOTATION: 3,          // Cotización
+  ORDER_TRACKING: 4,     // Rastreo de pedidos
 };
 
 // Request Status

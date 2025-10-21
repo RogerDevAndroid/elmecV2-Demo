@@ -136,19 +136,26 @@ export default function Login() {
           )}
         </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => router.push('/auth/forgot-password')}
+          >
+            <Text style={styles.forgotPasswordText}>
+              ¿Olvidaste tu contraseña?
+            </Text>
+          </TouchableOpacity>
+
           {/* Registro oculto para demo */}
         </View>
 
         <View style={styles.testCredentials}>
           <Text style={styles.testTitle}>Credenciales de prueba (ELMEC):</Text>
-          <Text style={styles.testText}>Contraseña temporal: abc321</Text>
-          <Text style={styles.testText}>Ejemplos de email:</Text>
-          <Text style={styles.testText}>• i.pineda@elmec.com.mx</Text>
+          <Text style={styles.testText}>Contraseña: abc321</Text>
+          <Text style={styles.testText}>Usuarios válidos:</Text>
           <Text style={styles.testText}>• c.rosales@elmec.com.mx</Text>
           <Text style={styles.testText}>• alex.diaz@elmec.com.mx</Text>
-          <Text style={styles.testText}>
-            Si no puedes iniciar sesión, avísanos el correo para verificar el perfil en public.users.
-          </Text>
+          <Text style={styles.testText}>• s.vazquez@elmec.com.mx</Text>
+          <Text style={styles.testText}>• i.munoz@elmec.com.mx</Text>
         </View>
       </ScrollView>
     </LinearGradient>
@@ -233,6 +240,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#1e40af',
+  },
+  forgotPasswordButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  forgotPasswordText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textDecorationLine: 'underline',
   },
   registerLink: {
     fontSize: 16,
