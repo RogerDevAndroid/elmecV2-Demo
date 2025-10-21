@@ -17,6 +17,7 @@ import {
   Clock,
   CircleCheck as CheckCircle,
   CircleAlert as AlertCircle,
+  MoreHorizontal,
 } from 'lucide-react-native';
 
 export default function Home() {
@@ -155,7 +156,16 @@ export default function Home() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actividad Reciente</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Actividad Reciente</Text>
+            <TouchableOpacity
+              style={styles.sectionButton}
+              onPress={() => router.push('/(tabs)/requests')}
+            >
+              <Text style={styles.sectionButtonText}>Ver todo</Text>
+              <MoreHorizontal size={20} color="#202B52" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.activityList}>
             {recentActivity.map(item => (
               <View key={item.id} style={styles.activityItem}>
@@ -284,11 +294,27 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
     color: '#111827',
-    marginBottom: 16,
+  },
+  sectionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 8,
+  },
+  sectionButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#202B52',
   },
   quickActions: {
     flexDirection: 'row',
