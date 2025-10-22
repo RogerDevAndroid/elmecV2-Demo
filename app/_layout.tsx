@@ -42,7 +42,11 @@ export default function RootLayout() {
     <ErrorBoundary>
       <Provider store={store}>
         <ContextProviders>
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack
+            screenOptions={{ headerShown: false }}
+            initialRouteName="auth"
+          >
+            <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="auth" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
