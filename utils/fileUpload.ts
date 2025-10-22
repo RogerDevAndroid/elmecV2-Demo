@@ -70,9 +70,14 @@ export async function uploadFileToStorage(
 
     console.log('Uploading to path:', filePath);
 
-    // Convert base64 to blob
-    const base64Response = await fetch(`data:${file.type};base64,${fileBase64}`);
-    const blob = await base64Response.blob();
+    // Convert base64 to blob without using fetch (CSP-compliant)
+    const byteCharacters = atob(fileBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: file.type });
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
