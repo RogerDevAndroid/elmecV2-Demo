@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 
 export interface UploadResult {
   url: string;
@@ -44,23 +45,6 @@ export async function uploadFileToStorage(
       throw new Error('El archivo es demasiado grande. Tamaño máximo: 5MB');
     }
 
-    // Read file as base64
-    let fileBase64: string;
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(file.uri);
-      if (!fileInfo.exists) {
-        console.error('File does not exist:', file.uri);
-        return null;
-      }
-
-      fileBase64 = await FileSystem.readAsStringAsync(file.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-    } catch (readError) {
-      console.error('Error reading file:', readError);
-      throw new Error('No se pudo leer el archivo');
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(7);
@@ -70,9 +54,38 @@ export async function uploadFileToStorage(
 
     console.log('Uploading to path:', filePath);
 
-    // Convert base64 to blob
-    const base64Response = await fetch(`data:${file.type};base64,${fileBase64}`);
-    const blob = await base64Response.blob();
+    let blob: Blob;
+
+    if (Platform.OS === 'web') {
+      try {
+        const response = await fetch(file.uri);
+        blob = await response.blob();
+        console.log('File read successfully on web');
+      } catch (readError) {
+        console.error('Error reading file on web:', readError);
+        throw new Error('No se pudo leer el archivo');
+      }
+    } else {
+      let fileBase64: string;
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(file.uri);
+        if (!fileInfo.exists) {
+          console.error('File does not exist:', file.uri);
+          return null;
+        }
+
+        fileBase64 = await FileSystem.readAsStringAsync(file.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        
+        const base64Response = await fetch(`data:${file.type};base64,${fileBase64}`);
+        blob = await base64Response.blob();
+        console.log('File read successfully on native');
+      } catch (readError) {
+        console.error('Error reading file on native:', readError);
+        throw new Error('No se pudo leer el archivo');
+      }
+    }
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage

@@ -244,36 +244,50 @@ export default function Requests() {
 
   const handleCreateRequest = async () => {
     console.log('=== INICIANDO CREACIÓN DE SOLICITUD ===');
+    
+    const trimmedTitle = newRequest.titulo.trim();
+    const trimmedMessage = newRequest.mensaje.trim();
+    
     console.log('Estado del formulario:', {
-      titulo: newRequest.titulo,
-      mensaje: newRequest.mensaje?.substring(0, 50),
+      titulo: trimmedTitle,
+      tituloLength: trimmedTitle.length,
+      mensaje: trimmedMessage?.substring(0, 50),
+      mensajeLength: trimmedMessage.length,
       tipo: newRequest.tipo,
       prioridad: newRequest.prioridad,
       agente_id: newRequest.agente_id,
       archivos: selectedFiles.length,
     });
 
-    if (!newRequest.titulo || !newRequest.mensaje) {
+    if (!trimmedTitle || !trimmedMessage) {
       console.log('❌ Validación fallida: campos vacíos');
-      Alert.alert('Error', 'Por favor completa el título y mensaje');
+      Alert.alert('Error de validación', 'Por favor completa el título y mensaje');
       return;
     }
 
-    if (newRequest.titulo.length < 5 || newRequest.titulo.length > 200) {
+    if (trimmedTitle.length < 5 || trimmedTitle.length > 200) {
       console.log('❌ Validación fallida: longitud del título');
-      Alert.alert('Error', 'El título debe tener entre 5 y 200 caracteres');
+      console.log('Longitud actual del título (sin espacios):', trimmedTitle.length);
+      Alert.alert(
+        'Error de validación',
+        `El título debe tener entre 5 y 200 caracteres (sin contar espacios al inicio o final).\n\nActualmente tiene ${trimmedTitle.length} caracteres.`
+      );
       return;
     }
 
-    if (newRequest.mensaje.length < 10) {
+    if (trimmedMessage.length < 10) {
       console.log('❌ Validación fallida: longitud del mensaje');
-      Alert.alert('Error', 'El mensaje debe tener al menos 10 caracteres');
+      console.log('Longitud actual del mensaje (sin espacios):', trimmedMessage.length);
+      Alert.alert(
+        'Error de validación',
+        `El mensaje debe tener al menos 10 caracteres (sin contar espacios al inicio o final).\n\nActualmente tiene ${trimmedMessage.length} caracteres.`
+      );
       return;
     }
 
     if (!user) {
       console.log('❌ Validación fallida: usuario no autenticado');
-      Alert.alert('Error', 'Usuario no autenticado');
+      Alert.alert('Error de autenticación', 'Debes iniciar sesión para crear una solicitud');
       return;
     }
 
@@ -897,7 +911,16 @@ export default function Requests() {
 
           <ScrollView style={styles.modalContent}>
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Título *</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.formLabel}>Título *</Text>
+                <Text style={[
+                  styles.charCounter,
+                  newRequest.titulo.trim().length < 5 && styles.charCounterError,
+                  newRequest.titulo.trim().length >= 5 && styles.charCounterSuccess,
+                ]}>
+                  {newRequest.titulo.trim().length}/200 caracteres
+                </Text>
+              </View>
               <TextInput
                 style={styles.formInput}
                 placeholder="Describe brevemente tu solicitud"
@@ -1037,7 +1060,16 @@ export default function Requests() {
             )}
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Mensaje *</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.formLabel}>Mensaje *</Text>
+                <Text style={[
+                  styles.charCounter,
+                  newRequest.mensaje.trim().length < 10 && styles.charCounterError,
+                  newRequest.mensaje.trim().length >= 10 && styles.charCounterSuccess,
+                ]}>
+                  {newRequest.mensaje.trim().length} caracteres (mínimo 10)
+                </Text>
+              </View>
               <FileUploadComponent
                 onFileSelected={handleFileSelected}
                 onFileRemoved={handleFileRemoved}
@@ -1361,6 +1393,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#111827',
     marginBottom: 8,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  charCounter: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
+  },
+  charCounterError: {
+    color: '#ef4444',
+    fontFamily: 'Inter-SemiBold',
+  },
+  charCounterSuccess: {
+    color: '#10b981',
+    fontFamily: 'Inter-SemiBold',
   },
   formInput: {
     backgroundColor: '#f9fafb',

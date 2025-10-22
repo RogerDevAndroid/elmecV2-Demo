@@ -58,9 +58,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             <Image
               source={{ uri: message.file_url }}
               style={styles.messageImage}
+              defaultSource={require('@/assets/images/icon.png')}
+              onError={() => console.log('Error loading image:', message.file_url)}
             />
           </TouchableOpacity>
-        ) : null;
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Text style={styles.imagePlaceholderText}>🖼️ Imagen no disponible</Text>
+          </View>
+        );
 
       case 'audio':
         return (
@@ -329,6 +335,23 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 12,
     marginBottom: 4,
+    backgroundColor: '#f3f4f6',
+  },
+  imagePlaceholder: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 4,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+  },
+  imagePlaceholderText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#9ca3af',
+    textAlign: 'center',
   },
   audioMessage: {
     flexDirection: 'row',
