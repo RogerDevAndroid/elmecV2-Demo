@@ -40,9 +40,10 @@ import {
   Send,
   X,
   User as UserIcon,
-  Activity as ActivityIndicator,
   MessageCircle,
+  Loader2,
 } from 'lucide-react-native';
+import { ActivityIndicator } from 'react-native';
 import { AdvancedSearchComponent } from '@/components/AdvancedSearchComponent';
 import { FileUploadComponent } from '@/components/FileUploadComponent';
 import { uploadMultipleFiles, UploadResult } from '@/utils/fileUpload';
@@ -242,26 +243,41 @@ export default function Requests() {
   };
 
   const handleCreateRequest = async () => {
+    console.log('=== INICIANDO CREACIÓN DE SOLICITUD ===');
+    console.log('Estado del formulario:', {
+      titulo: newRequest.titulo,
+      mensaje: newRequest.mensaje?.substring(0, 50),
+      tipo: newRequest.tipo,
+      prioridad: newRequest.prioridad,
+      agente_id: newRequest.agente_id,
+      archivos: selectedFiles.length,
+    });
+
     if (!newRequest.titulo || !newRequest.mensaje) {
+      console.log('❌ Validación fallida: campos vacíos');
       Alert.alert('Error', 'Por favor completa el título y mensaje');
       return;
     }
 
     if (newRequest.titulo.length < 5 || newRequest.titulo.length > 200) {
+      console.log('❌ Validación fallida: longitud del título');
       Alert.alert('Error', 'El título debe tener entre 5 y 200 caracteres');
       return;
     }
 
     if (newRequest.mensaje.length < 10) {
+      console.log('❌ Validación fallida: longitud del mensaje');
       Alert.alert('Error', 'El mensaje debe tener al menos 10 caracteres');
       return;
     }
 
     if (!user) {
+      console.log('❌ Validación fallida: usuario no autenticado');
       Alert.alert('Error', 'Usuario no autenticado');
       return;
     }
 
+    console.log('✅ Todas las validaciones pasaron');
     setSubmitting(true);
     try {
       // Validate agent exists if selected
@@ -309,18 +325,7 @@ export default function Requests() {
       }
 
       // Properly typed request data
-      const requestData: {
-        titulo: string;
-        mensaje: string;
-        tipo: number;
-        prioridad: 'baja' | 'media' | 'alta' | 'urgente';
-        estatus: 'nuevo';
-        usuario_id: string;
-        agente_id: string | null;
-        archivos: string[];
-        tags: string[];
-        metadata: Record<string, any>;
-      } = {
+      const requestData: any = {
         titulo: newRequest.titulo.trim(),
         mensaje: newRequest.mensaje.trim(),
         tipo: newRequest.tipo,
@@ -328,20 +333,24 @@ export default function Requests() {
         estatus: 'nuevo',
         usuario_id: user.id,
         agente_id: newRequest.agente_id || null,
-        archivos: uploadedFiles.map(file => file.url),
         tags: [],
         metadata: {
-          files: uploadedFiles.map(file => ({
-            name: file.name,
-            url: file.url,
-            path: file.path,
-            type: file.type,
-            size: file.size,
-          })),
           created_from: 'mobile',
           app_version: '1.0.0',
         },
       };
+
+      // Agregar archivos solo si hay archivos subidos
+      if (uploadedFiles.length > 0) {
+        requestData.archivos = uploadedFiles.map(file => file.url);
+        requestData.metadata.files = uploadedFiles.map(file => ({
+          name: file.name,
+          url: file.url,
+          path: file.path,
+          type: file.type,
+          size: file.size,
+        }));
+      }
 
       console.log('Creating request with data:', {
         titulo: requestData.titulo,
@@ -384,12 +393,23 @@ export default function Requests() {
         return;
       }
 
-      console.log('Request created successfully:', data.id);
+      console.log('✅ Request created successfully:', data.id);
+      console.log('Solicitud creada:', {
+        id: data.id,
+        titulo: data.titulo,
+        estatus: data.estatus,
+        usuario_id: data.usuario_id,
+        agente_id: data.agente_id,
+      });
 
       // Agregar la nueva solicitud a la lista
-      setRequests(prev => [data as RequestWithRelations, ...prev]);
+      setRequests(prev => {
+        console.log('Agregando solicitud a la lista. Total anterior:', prev.length);
+        return [data as RequestWithRelations, ...prev];
+      });
 
       // Limpiar formulario
+      console.log('Limpiando formulario...');
       setNewRequest({
         titulo: '',
         mensaje: '',
@@ -398,6 +418,7 @@ export default function Requests() {
         agente_id: '',
       });
       setSelectedFiles([]);
+      console.log('Cerrando modal...');
       setShowNewRequestModal(false);
 
       // Enviar notificación al usuario
@@ -416,7 +437,7 @@ export default function Requests() {
       // Si se asignó un agente, enviar notificación al agente
       if (data.agente_id) {
         try {
-          const { error: notifError } = await supabase
+          const { error: notifError } = await supabaseClient
             .from('notifications')
             .insert({
               user_id: data.agente_id,
@@ -426,7 +447,7 @@ export default function Requests() {
               priority: 'medium',
               data: { requestId: data.id },
               read: false,
-            });
+            } as any);
 
           if (notifError) {
             console.error('Error sending agent notification:', notifError);
@@ -437,15 +458,18 @@ export default function Requests() {
         }
       }
 
+      console.log('Mostrando alerta de éxito...');
       Alert.alert('Éxito', 'Solicitud creada correctamente');
+      console.log('=== SOLICITUD CREADA EXITOSAMENTE ===');
     } catch (error) {
-      console.error('Unexpected error creating request:', error);
+      console.error('❌ Unexpected error creating request:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       Alert.alert(
         'Error',
         `Error inesperado al crear la solicitud: ${errorMessage}\n\nPor favor intenta de nuevo.`
       );
     } finally {
+      console.log('Finalizando proceso. Liberando botón...');
       setSubmitting(false);
     }
   };
@@ -1042,11 +1066,19 @@ export default function Requests() {
               ]}
               onPress={handleCreateRequest}
               disabled={submitting}
+              activeOpacity={submitting ? 1 : 0.7}
             >
-              <Send size={20} color="#ffffff" />
-              <Text style={styles.submitButtonText}>
-                {submitting ? 'Enviando...' : 'Enviar Solicitud'}
-              </Text>
+              {submitting ? (
+                <>
+                  <ActivityIndicator size="small" color="#ffffff" />
+                  <Text style={styles.submitButtonText}>Enviando...</Text>
+                </>
+              ) : (
+                <>
+                  <Send size={20} color="#ffffff" />
+                  <Text style={styles.submitButtonText}>Enviar Solicitud</Text>
+                </>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
