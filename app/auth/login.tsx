@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -64,7 +65,7 @@ export default function Login() {
   };
 
   return (
-    <LinearGradient colors={['#1e40af', '#3b82f6']} style={styles.container}>
+    <LinearGradient colors={['#335686', '#95C3ED']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity
           style={styles.backButton}
@@ -74,6 +75,11 @@ export default function Login() {
         </TouchableOpacity>
 
         <View style={styles.header}>
+          <Image
+            source={require('@/assets/images/branding/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Iniciar Sesión</Text>
           <Text style={styles.subtitle}>Accede a tu cuenta ELMEC</Text>
         </View>
@@ -178,6 +184,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 20,
+  },
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
@@ -239,7 +250,7 @@ const styles = StyleSheet.create({
   loginButtonText: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e40af',
+    color: '#335686',
   },
   forgotPasswordButton: {
     paddingVertical: 12,
