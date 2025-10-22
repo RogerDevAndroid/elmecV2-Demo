@@ -8,34 +8,25 @@ export default function App() {
   const router = useRouter();
 
   useEffect(() => {
-    // Only navigate after loading is complete and component is stable
-    if (!loading) {
-      const timer = setTimeout(() => {
+    // Always redirect to login screen first
+    const timer = setTimeout(() => {
+      if (!loading) {
         if (isAuthenticated) {
           router.replace('/(tabs)');
         } else {
-          router.replace('/auth');
+          router.replace('/auth/login');
         }
-      }, 100); // Small delay to ensure proper initialization
+      }
+    }, 100); // Small delay to ensure proper initialization
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [isAuthenticated, loading, router]);
 
   // Show loading state while determining auth status
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#1e40af" />
-        <Text style={styles.loadingText}>Cargando...</Text>
-      </View>
-    );
-  }
-
-  // Fallback UI (should not be visible due to navigation)
   return (
     <View style={styles.container}>
-      <Text style={styles.loadingText}>Inicializando...</Text>
+      <ActivityIndicator size="large" color="#1e40af" />
+      <Text style={styles.loadingText}>Cargando...</Text>
     </View>
   );
 }
