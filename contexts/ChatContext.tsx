@@ -166,7 +166,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         .select(
           `
           *,
-          user:users(nombre, apellido_paterno, apellido_materno, foto)
+          user:users(nombre, apellido_paterno, apellido_materno)
         `
         )
         .eq('chat_room_id', roomId)
@@ -176,6 +176,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (error) {
         console.error('Error loading messages:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        setError(`Error al cargar mensajes: ${error.message}`);
         return;
       }
 
@@ -185,6 +192,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }));
     } catch (error) {
       console.error('Error loading messages:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setError(`Error al cargar mensajes: ${errorMessage}`);
     }
   };
 
@@ -207,7 +216,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           // Get user info for the message
           const { data: userData } = await supabase
             .from('users')
-            .select('nombre, apellido_paterno, apellido_materno, foto')
+            .select('nombre, apellido_paterno, apellido_materno')
             .eq('id', newMessage.sender_id)
             .single();
 
@@ -450,7 +459,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         .select(
           `
           *,
-          user:users(nombre, apellido_paterno, apellido_materno, foto)
+          user:users(nombre, apellido_paterno, apellido_materno)
         `
         )
         .single();
@@ -732,7 +741,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         .select(
           `
           *,
-          user:users(nombre, apellido_paterno, apellido_materno, foto)
+          user:users(nombre, apellido_paterno, apellido_materno)
         `
         )
         .eq('chat_room_id', roomId)

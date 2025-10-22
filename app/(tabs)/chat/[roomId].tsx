@@ -812,8 +812,18 @@ export default function ChatRoom() {
                   <Image
                     source={{ uri: message.file_url }}
                     style={styles.messageImage}
+                    defaultSource={require('@/assets/images/icon.png')}
+                    onError={() => console.log('Error loading image:', message.file_url)}
                   />
                 </TouchableOpacity>
+              )}
+              
+              {/* Image message without URL - show placeholder */}
+              {message.type === 'image' && !message.file_url && (
+                <View style={styles.imagePlaceholder}>
+                  <ImageIcon size={48} color="#9ca3af" />
+                  <Text style={styles.imagePlaceholderText}>Imagen no disponible</Text>
+                </View>
               )}
 
               {/* Audio message */}
@@ -1499,6 +1509,22 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 12,
     marginBottom: 4,
+    backgroundColor: '#f3f4f6',
+  },
+  imagePlaceholder: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 4,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  imagePlaceholderText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#9ca3af',
   },
   audioMessage: {
     flexDirection: 'row',
