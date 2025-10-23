@@ -93,6 +93,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       loadChatRooms();
       setupChatRoomsSubscription();
       setupPresence();
+      updateLastSeen(); // Initial update
     }
 
     return () => {
@@ -106,8 +107,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         presenceChannel.untrack();
         supabase.removeChannel(presenceChannel);
       }
+
+      // Update last_seen when unmounting
+      if (user) {
+        updateLastSeen();
+      }
     };
   }, [session]);
+
+  // Update last_seen periodically while app is active
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      updateLastSeen();
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const loadChatRooms = async () => {
     if (!session?.user) {
@@ -860,6 +877,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     return roomMessages.filter(msg => msg.sender_id !== user?.id && !msg.isRead)
       .length;
   };
+
+  const updateLastSeen = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      await supabaseClient
+        .from('users')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', user.id);
+    } catch (error) {
+      console.error('Error updating last_seen:', error);
+    }
+  }, [user]);
 
   const setupPresence = useCallback(() => {
     if (!user) return;
