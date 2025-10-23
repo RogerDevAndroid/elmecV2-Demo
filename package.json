@@ -69,7 +69,6 @@
     "react-i18next": "^15.7.3",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
-    "react-native-image-viewing": "^0.2.2",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
@@ -96,6 +95,9 @@
     "prettier": "^3.6.2",
     "serve": "^14.2.5",
     "typescript": "~5.8.3"
+  },
+  "optionalDependencies": {
+    "react-native-image-viewing": "^0.2.2"
   },
   "overrides": {
     "metro": "^0.81.0",
