@@ -24,6 +24,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+import { uploadFileToStorage } from '@/utils/fileUpload';
 import {
   ArrowLeft,
   Send,
@@ -423,21 +424,55 @@ export default function ChatRoom() {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      await sendMessage(
-        roomId!,
-        'Imagen enviada',
-        'image',
-        result.assets[0].uri,
-        result.assets[0].fileName || 'imagen.jpg',
-        result.assets[0].fileSize
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+
+        console.log('Uploading image to storage...');
+
+        // Upload to Supabase Storage
+        const uploadResult = await uploadFileToStorage(
+          {
+            uri: asset.uri,
+            name: asset.fileName || `imagen_${Date.now()}.jpg`,
+            type: asset.type || 'image/jpeg',
+            size: asset.fileSize || 0
+          },
+          'request-files',
+          `chat/${roomId}`
+        );
+
+        if (!uploadResult) {
+          throw new Error('No se pudo subir la imagen');
+        }
+
+        console.log('Image uploaded successfully:', uploadResult.url);
+
+        await sendMessage(
+          roomId!,
+          'Imagen enviada',
+          'image',
+          uploadResult.url,  // ✅ Public URL
+          uploadResult.name,
+          uploadResult.size
+        );
+
+        Alert.alert('Éxito', 'Imagen enviada correctamente');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'No se pudo enviar la imagen'
       );
     }
     setShowAttachmentMenu(false);
@@ -453,20 +488,54 @@ export default function ChatRoom() {
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      await sendMessage(
-        roomId!,
-        'Foto tomada',
-        'image',
-        result.assets[0].uri,
-        result.assets[0].fileName || 'foto.jpg',
-        result.assets[0].fileSize
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+
+        console.log('Uploading photo to storage...');
+
+        // Upload to Supabase Storage
+        const uploadResult = await uploadFileToStorage(
+          {
+            uri: asset.uri,
+            name: asset.fileName || `foto_${Date.now()}.jpg`,
+            type: asset.type || 'image/jpeg',
+            size: asset.fileSize || 0
+          },
+          'request-files',
+          `chat/${roomId}`
+        );
+
+        if (!uploadResult) {
+          throw new Error('No se pudo subir la foto');
+        }
+
+        console.log('Photo uploaded successfully:', uploadResult.url);
+
+        await sendMessage(
+          roomId!,
+          'Foto tomada',
+          'image',
+          uploadResult.url,  // ✅ Public URL
+          uploadResult.name,
+          uploadResult.size
+        );
+
+        Alert.alert('Éxito', 'Foto enviada correctamente');
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'No se pudo enviar la foto'
       );
     }
     setShowAttachmentMenu(false);
@@ -480,17 +549,47 @@ export default function ChatRoom() {
       });
 
       if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+
+        console.log('Uploading document to storage...');
+
+        // Upload to Supabase Storage
+        const uploadResult = await uploadFileToStorage(
+          {
+            uri: asset.uri,
+            name: asset.name,
+            type: asset.mimeType || 'application/octet-stream',
+            size: asset.size || 0
+          },
+          'request-files',
+          `chat/${roomId}`
+        );
+
+        if (!uploadResult) {
+          throw new Error('No se pudo subir el archivo');
+        }
+
+        console.log('Document uploaded successfully:', uploadResult.url);
+
         await sendMessage(
           roomId!,
           'Archivo enviado',
           'file',
-          result.assets[0].uri,
-          result.assets[0].name,
-          result.assets[0].size
+          uploadResult.url,  // ✅ Public URL
+          uploadResult.name,
+          uploadResult.size
         );
+
+        Alert.alert('Éxito', 'Archivo enviado correctamente');
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo seleccionar el archivo');
+      console.error('Error uploading document:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'No se pudo seleccionar el archivo'
+      );
     }
     setShowAttachmentMenu(false);
   };
@@ -509,30 +608,65 @@ export default function ChatRoom() {
         // Stop recording
         setIsRecording(false);
         await recording.stopAndUnloadAsync();
-        
+
         const uri = recording.getURI();
         if (uri) {
-          // Upload audio file and send message
-          const audioInfo = await FileSystem.getInfoAsync(uri);
-          const audioBlob = await fetch(uri).then(r => r.blob());
-          
-          // Create a file name
-          const fileName = `audio_${Date.now()}.m4a`;
-          
-          // Here you would upload to your storage service (Supabase, etc.)
-          // For now, we'll send a placeholder
-          sendMessage(
-            roomId!,
-            'Audio enviado',
-            'audio',
-            uri, // temporary - should be uploaded URL
-            fileName,
-            undefined, // fileSize
-            recordingDuration // audioDuration
-          );
+          try {
+            console.log('Uploading audio file to storage...');
+
+            // Get audio file info
+            const audioInfo = await FileSystem.getInfoAsync(uri);
+
+            if (!audioInfo.exists) {
+              throw new Error('El archivo de audio no existe');
+            }
+
+            // Create file name with timestamp
+            const fileName = `audio_${Date.now()}.m4a`;
+
+            // Upload to Supabase Storage
+            const uploadResult = await uploadFileToStorage(
+              {
+                uri: uri,
+                name: fileName,
+                type: 'audio/m4a',
+                size: audioInfo.size || 0
+              },
+              'request-files',
+              `chat/${roomId}`
+            );
+
+            if (!uploadResult) {
+              throw new Error('No se pudo subir el audio a storage');
+            }
+
+            console.log('Audio uploaded successfully:', uploadResult.url);
+
+            // Send message with uploaded audio URL
+            await sendMessage(
+              roomId!,
+              'Audio enviado',
+              'audio',
+              uploadResult.url,  // ✅ Public URL from Supabase Storage
+              uploadResult.name,
+              uploadResult.size,
+              recordingDuration
+            );
+
+            Alert.alert('Éxito', 'Audio enviado correctamente');
+          } catch (uploadError) {
+            console.error('Error uploading audio:', uploadError);
+            Alert.alert(
+              'Error',
+              uploadError instanceof Error
+                ? uploadError.message
+                : 'No se pudo enviar el audio. Intenta de nuevo.'
+            );
+          }
         }
-        
+
         setRecording(null);
+        setRecordingDuration(0);
       } else {
         // Request permissions
         const { status } = await Audio.requestPermissionsAsync();
@@ -554,7 +688,7 @@ export default function ChatRoom() {
         const { recording: newRecording } = await Audio.Recording.createAsync(
           Audio.RecordingOptionsPresets.HIGH_QUALITY
         );
-        
+
         setRecording(newRecording);
         setIsRecording(true);
       }

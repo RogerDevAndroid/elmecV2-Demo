@@ -27,7 +27,7 @@ interface ChatRoomWithRequest extends ChatRoom {
 export default function ChatList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const { chatRooms, messages, loading, error, getRoomUnreadCount } = useChat();
+  const { chatRooms, messages, loading, error, getRoomUnreadCount, isUserOnline } = useChat();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -40,6 +40,12 @@ export default function ChatList() {
         (name: string) => name !== currentUserName
       ) || 'Chat'
     );
+  };
+
+  const getOtherParticipantId = (room: any): string | null => {
+    if (!room.participants || !user) return null;
+
+    return room.participants.find((id: string) => id !== user.id) || null;
   };
 
   const getOtherParticipantInitials = (name: string) => {
@@ -221,15 +227,20 @@ export default function ChatList() {
                     {getOtherParticipantInitials(otherParticipant)}
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.onlineIndicator,
-                    {
-                      backgroundColor:
-                        Math.random() > 0.5 ? '#10b981' : '#6b7280',
-                    },
-                  ]}
-                />
+                {(() => {
+                  const otherUserId = getOtherParticipantId(room);
+                  const online = otherUserId ? isUserOnline(otherUserId) : false;
+                  return (
+                    <View
+                      style={[
+                        styles.onlineIndicator,
+                        {
+                          backgroundColor: online ? '#10b981' : '#6b7280',
+                        },
+                      ]}
+                    />
+                  );
+                })()}
               </View>
 
               <View style={styles.chatContent}>
