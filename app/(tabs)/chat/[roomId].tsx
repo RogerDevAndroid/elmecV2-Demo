@@ -24,7 +24,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { uploadFileToStorage } from '@/utils/fileUpload';
+import ImageView from 'react-native-image-viewing';
 import {
   ArrowLeft,
   Send,
@@ -307,6 +309,9 @@ export default function ChatRoom() {
   );
   const [timer, setTimer] = useState<ReturnType<typeof setInterval> | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageViewerImages, setImageViewerImages] = useState<{ uri: string }[]>([]);
 
   const chatRoom = getChatRoom(roomId!);
   const roomMessages = messages[roomId!] || [];
@@ -842,6 +847,62 @@ export default function ChatRoom() {
     setMessageText('');
   };
 
+  const handleImagePress = (imageUrl: string) => {
+    // Get all image messages in the chat
+    const imageMessages = roomMessages
+      .filter(msg => msg.type === 'image' && msg.file_url)
+      .map(msg => ({ uri: msg.file_url! }));
+
+    // Find the index of the clicked image
+    const index = imageMessages.findIndex(img => img.uri === imageUrl);
+
+    setImageViewerImages(imageMessages);
+    setCurrentImageIndex(index >= 0 ? index : 0);
+    setImageViewerVisible(true);
+  };
+
+  const handleFileDownload = async (fileUrl: string, fileName: string) => {
+    if (Platform.OS === 'web') {
+      // For web, open in new tab
+      window.open(fileUrl, '_blank');
+      return;
+    }
+
+    try {
+      // Download file to local filesystem
+      const fileUri = FileSystem.documentDirectory + fileName;
+
+      const downloadResumable = FileSystem.createDownloadResumable(
+        fileUrl,
+        fileUri
+      );
+
+      const result = await downloadResumable.downloadAsync();
+
+      if (!result) {
+        throw new Error('Download failed');
+      }
+
+      // Check if sharing is available
+      const isSharingAvailable = await Sharing.isAvailableAsync();
+
+      if (isSharingAvailable) {
+        await Sharing.shareAsync(result.uri);
+      } else {
+        Alert.alert(
+          'Descarga completa',
+          `Archivo guardado en: ${result.uri}`
+        );
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo descargar el archivo. Intenta de nuevo.'
+      );
+    }
+  };
+
   const renderMessage = (message: ChatMessage, index: number) => {
     const isOwnMessage = message.sender_id === user?.id;
     const showAvatar =
@@ -936,16 +997,13 @@ export default function ChatRoom() {
               {/* Image message */}
               {message.type === 'image' && message.file_url && (
                 <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      'Imagen',
-                      'Funcionalidad de vista completa próximamente'
-                    )
-                  }
+                  onPress={() => handleImagePress(message.file_url!)}
+                  activeOpacity={0.9}
                 >
                   <Image
                     source={{ uri: message.file_url }}
                     style={styles.messageImage}
+                    resizeMode="cover"
                   />
                 </TouchableOpacity>
               )}
@@ -1007,7 +1065,10 @@ export default function ChatRoom() {
                 <TouchableOpacity
                   style={styles.fileMessage}
                   onPress={() =>
-                    Alert.alert('Archivo', 'Descarga próximamente')
+                    handleFileDownload(
+                      message.file_url!,
+                      message.file_name || 'archivo'
+                    )
                   }
                 >
                   <View style={styles.fileIcon}>
@@ -1462,6 +1523,14 @@ export default function ChatRoom() {
             </View>
           </View>
         )}
+
+        {/* Image Viewer */}
+        <ImageView
+          images={imageViewerImages}
+          imageIndex={currentImageIndex}
+          visible={imageViewerVisible}
+          onRequestClose={() => setImageViewerVisible(false)}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
