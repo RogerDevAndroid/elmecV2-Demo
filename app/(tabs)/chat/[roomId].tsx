@@ -26,7 +26,7 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { uploadFileToStorage } from '@/utils/fileUpload';
-import ImageView from 'react-native-image-viewing';
+import ImageViewer from '@/components/ImageViewer';
 import {
   ArrowLeft,
   Send,
@@ -1525,7 +1525,7 @@ export default function ChatRoom() {
         )}
 
         {/* Image Viewer */}
-        <ImageView
+        <ImageViewer
           images={imageViewerImages}
           imageIndex={currentImageIndex}
           visible={imageViewerVisible}
