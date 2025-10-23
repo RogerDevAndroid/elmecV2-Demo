@@ -6,10 +6,11 @@ import {
   StyleSheet,
   Alert,
   Image,
+  Platform,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import { Upload, File, Image as ImageIcon, X } from 'lucide-react-native';
+import { Upload, File, Image as ImageIcon, X, Camera } from 'lucide-react-native';
 
 interface FileUploadComponentProps {
   onFileSelected: (file: {
@@ -97,6 +98,7 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
           'Permisos requeridos',
           'Necesitamos permisos para acceder a tus fotos'
         );
+        setUploading(false);
         return;
       }
 
@@ -119,7 +121,50 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
         }
       }
     } catch (error) {
+      console.error('Error picking image:', error);
       Alert.alert('Error', 'No se pudo seleccionar la imagen');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      setUploading(true);
+
+      // Request camera permissions
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permisos requeridos',
+          'Necesitamos permisos para acceder a tu cámara'
+        );
+        setUploading(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const photo = result.assets[0];
+        if (validateFile({ size: photo.fileSize })) {
+          onFileSelected({
+            uri: photo.uri,
+            name: `photo_${Date.now()}.jpg`,
+            type: 'image/jpeg',
+            size: photo.fileSize || 0,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'No se pudo tomar la foto');
     } finally {
       setUploading(false);
     }
@@ -144,8 +189,8 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
           onPress={pickDocument}
           disabled={uploading || files.length >= maxFiles}
         >
-          <Upload size={20} color="#ffffff" />
-          <Text style={styles.uploadButtonText}>Documento</Text>
+          <Upload size={18} color="#ffffff" />
+          <Text style={styles.uploadButtonText}>Archivo</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -156,9 +201,23 @@ export const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
           onPress={pickImage}
           disabled={uploading || files.length >= maxFiles}
         >
-          <ImageIcon size={20} color="#ffffff" />
-          <Text style={styles.uploadButtonText}>Imagen</Text>
+          <ImageIcon size={18} color="#ffffff" />
+          <Text style={styles.uploadButtonText}>Galería</Text>
         </TouchableOpacity>
+
+        {Platform.OS !== 'web' && (
+          <TouchableOpacity
+            style={[
+              styles.uploadButton,
+              uploading && styles.uploadButtonDisabled,
+            ]}
+            onPress={takePhoto}
+            disabled={uploading || files.length >= maxFiles}
+          >
+            <Camera size={18} color="#ffffff" />
+            <Text style={styles.uploadButtonText}>Cámara</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* File List */}
