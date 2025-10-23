@@ -18,9 +18,31 @@ export interface FileToUpload {
 }
 
 /**
- * Convert file URI to Blob for web platform
+ * Convert data URL to Blob without using fetch (CSP-safe)
+ */
+function dataURLtoBlob(dataurl: string): Blob {
+  const arr = dataurl.split(',');
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+/**
+ * Convert file URI to Blob for web platform (CSP-safe)
  */
 async function fileURIToBlob(uri: string): Promise<Blob> {
+  // Check if it's a data URL
+  if (uri.startsWith('data:')) {
+    return dataURLtoBlob(uri);
+  }
+
+  // For regular URLs (blob: or http:), use fetch
   const response = await fetch(uri);
   return await response.blob();
 }
@@ -87,9 +109,9 @@ export async function uploadFileToStorage(
           encoding: FileSystem.EncodingType.Base64,
         });
 
-        // Convert base64 to blob
-        const base64Response = await fetch(`data:${file.type};base64,${fileBase64}`);
-        blob = await base64Response.blob();
+        // Convert base64 to blob without fetch (CSP-safe)
+        const dataUrl = `data:${file.type};base64,${fileBase64}`;
+        blob = dataURLtoBlob(dataUrl);
       } catch (readError) {
         console.error('Error reading file:', readError);
         throw new Error('No se pudo leer el archivo');
