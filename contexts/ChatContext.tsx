@@ -28,6 +28,7 @@ interface ChatContextType {
   chatRooms: ChatRoom[];
   messages: { [roomId: string]: ChatMessage[] };
   typingUsers: { [roomId: string]: TypingUser[] };
+  onlineUsers: string[];
   sendMessage: (
     roomId: string,
     message: string,
@@ -51,6 +52,7 @@ interface ChatContextType {
   loadMoreMessages: (roomId: string) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   editMessage: (messageId: string, newMessage: string) => Promise<void>;
+  isUserOnline: (userId: string) => boolean;
   loading: boolean;
   error: string | null;
 }
@@ -75,11 +77,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [typingUsers, setTypingUsers] = useState<{
     [roomId: string]: TypingUser[];
   }>({});
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [realtimeChannels, setRealtimeChannels] = useState<{
     [roomId: string]: RealtimeChannel;
   }>({});
+  const [presenceChannel, setPresenceChannel] = useState<RealtimeChannel | null>(null);
 
   const { user, session } = useAuth();
   const { sendDemoNotification } = useNotifications();
@@ -88,6 +92,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (session?.user) {
       loadChatRooms();
       setupChatRoomsSubscription();
+      setupPresence();
     }
 
     return () => {
@@ -95,6 +100,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       Object.values(realtimeChannels).forEach(channel => {
         supabase.removeChannel(channel);
       });
+
+      // Cleanup presence
+      if (presenceChannel) {
+        presenceChannel.untrack();
+        supabase.removeChannel(presenceChannel);
+      }
     };
   }, [session]);
 
@@ -850,12 +861,55 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       .length;
   };
 
+  const setupPresence = useCallback(() => {
+    if (!user) return;
+
+    console.log('Setting up presence tracking for user:', user.id);
+
+    const channel = supabase
+      .channel('online_users')
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const userIds = Object.keys(state)
+          .flatMap(key => state[key])
+          .map((presence: any) => presence.user_id)
+          .filter(Boolean);
+
+        console.log('Online users updated:', userIds);
+        setOnlineUsers(userIds);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('User joined:', newPresences);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('User left:', leftPresences);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          // Track current user as online
+          await channel.track({
+            user_id: user.id,
+            user_name: `${user.nombre} ${user.apellido_paterno}`,
+            online_at: new Date().toISOString()
+          });
+          console.log('User tracked as online');
+        }
+      });
+
+    setPresenceChannel(channel);
+  }, [user]);
+
+  const isUserOnline = useCallback((userId: string): boolean => {
+    return onlineUsers.includes(userId);
+  }, [onlineUsers]);
+
   return (
     <ChatContext.Provider
       value={{
         chatRooms,
         messages,
         typingUsers,
+        onlineUsers,
         sendMessage,
         sendTypingIndicator,
         createChatRoom,
@@ -866,6 +920,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         loadMoreMessages,
         deleteMessage,
         editMessage,
+        isUserOnline,
         loading,
         error,
       }}
