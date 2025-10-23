@@ -30,6 +30,19 @@
         {
           "origin": "https://your-app.netlify.app/"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "La app necesita acceso a tus fotos para adjuntar imágenes a las solicitudes.",
+          "cameraPermission": "La app necesita acceso a tu cámara para tomar fotos y adjuntarlas a las solicitudes."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
       ]
     ],
     "experiments": {
