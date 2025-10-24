@@ -253,27 +253,93 @@ export default function Requests() {
       archivos: selectedFiles.length,
     });
 
-    if (!newRequest.titulo || !newRequest.mensaje) {
-      console.log('❌ Validación fallida: campos vacíos');
-      Alert.alert('Error', 'Por favor completa el título y mensaje');
+    // Validación de campos obligatorios
+    if (!newRequest.titulo.trim()) {
+      console.log('❌ Validación fallida: título vacío');
+      Alert.alert(
+        'Campo obligatorio',
+        'El título es obligatorio. Por favor ingresa un título descriptivo para tu solicitud.',
+        [{ text: 'Entendido' }]
+      );
       return;
     }
 
-    if (newRequest.titulo.length < 5 || newRequest.titulo.length > 200) {
-      console.log('❌ Validación fallida: longitud del título');
-      Alert.alert('Error', 'El título debe tener entre 5 y 200 caracteres');
+    if (!newRequest.mensaje.trim()) {
+      console.log('❌ Validación fallida: mensaje vacío');
+      Alert.alert(
+        'Campo obligatorio',
+        'El mensaje es obligatorio. Por favor describe en detalle tu solicitud.',
+        [{ text: 'Entendido' }]
+      );
       return;
     }
 
-    if (newRequest.mensaje.length < 10) {
-      console.log('❌ Validación fallida: longitud del mensaje');
-      Alert.alert('Error', 'El mensaje debe tener al menos 10 caracteres');
+    // Validación de longitud del título
+    if (newRequest.titulo.trim().length < 5) {
+      console.log('❌ Validación fallida: título muy corto');
+      Alert.alert(
+        'Título muy corto',
+        `El título debe tener al menos 5 caracteres. Actualmente tiene ${newRequest.titulo.trim().length} caracteres.\n\nPor favor ingresa un título más descriptivo.`,
+        [{ text: 'Entendido' }]
+      );
       return;
     }
 
+    if (newRequest.titulo.trim().length > 200) {
+      console.log('❌ Validación fallida: título muy largo');
+      Alert.alert(
+        'Título muy largo',
+        `El título no puede exceder 200 caracteres. Actualmente tiene ${newRequest.titulo.trim().length} caracteres.\n\nPor favor resume el título de tu solicitud.`,
+        [{ text: 'Entendido' }]
+      );
+      return;
+    }
+
+    // Validación de longitud del mensaje
+    if (newRequest.mensaje.trim().length < 10) {
+      console.log('❌ Validación fallida: mensaje muy corto');
+      Alert.alert(
+        'Mensaje muy corto',
+        `El mensaje debe tener al menos 10 caracteres. Actualmente tiene ${newRequest.mensaje.trim().length} caracteres.\n\nPor favor describe tu solicitud con más detalle.`,
+        [{ text: 'Entendido' }]
+      );
+      return;
+    }
+
+    // Validación de archivos
+    if (selectedFiles.length > 3) {
+      console.log('❌ Validación fallida: demasiados archivos');
+      Alert.alert(
+        'Demasiados archivos',
+        `Solo se permiten máximo 3 archivos adjuntos. Actualmente tienes ${selectedFiles.length} archivos seleccionados.\n\nPor favor elimina algunos archivos antes de continuar.`,
+        [{ text: 'Entendido' }]
+      );
+      return;
+    }
+
+    // Validar tamaño de cada archivo
+    const maxSizeInMB = 5;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    const oversizedFiles = selectedFiles.filter(file => file.size > maxSizeInBytes);
+    if (oversizedFiles.length > 0) {
+      console.log('❌ Validación fallida: archivos muy grandes');
+      const fileNames = oversizedFiles.map(f => `• ${f.name} (${(f.size / (1024 * 1024)).toFixed(2)}MB)`).join('\n');
+      Alert.alert(
+        'Archivos muy grandes',
+        `Los siguientes archivos exceden el límite de ${maxSizeInMB}MB:\n\n${fileNames}\n\nPor favor selecciona archivos más pequeños.`,
+        [{ text: 'Entendido' }]
+      );
+      return;
+    }
+
+    // Validación de usuario autenticado
     if (!user) {
       console.log('❌ Validación fallida: usuario no autenticado');
-      Alert.alert('Error', 'Usuario no autenticado');
+      Alert.alert(
+        'Sesión no válida',
+        'No se pudo verificar tu sesión. Por favor cierra sesión y vuelve a iniciar sesión.',
+        [{ text: 'Entendido' }]
+      );
       return;
     }
 
@@ -284,7 +350,7 @@ export default function Requests() {
       if (newRequest.agente_id) {
         const { data: agentExists, error: agentError } = await supabase
           .from('users')
-          .select('id')
+          .select('id, nombre, apellido_paterno, apellido_materno')
           .eq('id', newRequest.agente_id)
           .eq('rol', 'agent')
           .eq('activo', true)
@@ -292,7 +358,11 @@ export default function Requests() {
 
         if (agentError || !agentExists) {
           console.error('Agent validation error:', agentError);
-          Alert.alert('Error', 'El agente seleccionado no está disponible');
+          Alert.alert(
+            'Agente no disponible',
+            'El agente que seleccionaste ya no está disponible o no tiene permisos para recibir solicitudes.\n\nPor favor selecciona otro agente o deja el campo vacío para que se asigne automáticamente.',
+            [{ text: 'Entendido' }]
+          );
           setSubmitting(false);
           return;
         }
@@ -309,14 +379,41 @@ export default function Requests() {
             `requests/${user.id}`
           );
           console.log(`Successfully uploaded ${uploadedFiles.length} file(s)`);
-        } catch (uploadError) {
+        } catch (uploadError: any) {
           console.error('Error uploading files:', uploadError);
+
+          // Determinar el mensaje de error específico
+          let errorMessage = 'No se pudieron subir los archivos adjuntos.';
+          if (uploadError?.message) {
+            if (uploadError.message.includes('size')) {
+              errorMessage = 'Uno o más archivos exceden el tamaño máximo permitido.';
+            } else if (uploadError.message.includes('type') || uploadError.message.includes('format')) {
+              errorMessage = 'Uno o más archivos tienen un formato no permitido.';
+            } else if (uploadError.message.includes('network') || uploadError.message.includes('connection')) {
+              errorMessage = 'Error de conexión al subir los archivos. Verifica tu conexión a internet.';
+            } else if (uploadError.message.includes('permission') || uploadError.message.includes('denied')) {
+              errorMessage = 'No tienes permisos para subir archivos. Contacta al administrador.';
+            } else {
+              errorMessage = `Error al subir archivos: ${uploadError.message}`;
+            }
+          }
+
           Alert.alert(
             'Error al subir archivos',
-            'No se pudieron subir los archivos adjuntos. ¿Deseas continuar sin archivos?',
+            `${errorMessage}\n\n¿Deseas continuar sin archivos adjuntos?`,
             [
-              { text: 'Cancelar', style: 'cancel', onPress: () => { setSubmitting(false); } },
-              { text: 'Continuar sin archivos', onPress: () => { /* Continue without files */ } }
+              {
+                text: 'Cancelar',
+                style: 'cancel',
+                onPress: () => { setSubmitting(false); }
+              },
+              {
+                text: 'Continuar sin archivos',
+                onPress: () => {
+                  // Los archivos se limpiarán, continuar sin ellos
+                  uploadedFiles = [];
+                }
+              }
             ]
           );
           setSubmitting(false);
@@ -380,16 +477,65 @@ export default function Requests() {
           hint: error.hint,
           code: error.code,
         });
-        Alert.alert(
-          'Error al crear solicitud',
-          `No se pudo crear la solicitud: ${error.message}\n\nPor favor intenta de nuevo.`
-        );
+
+        // Analizar el tipo de error y mostrar mensaje específico
+        let errorTitle = 'Error al crear solicitud';
+        let errorMessage = 'No se pudo crear la solicitud. Por favor intenta de nuevo.';
+
+        // Errores de validación de Supabase
+        if (error.code === '23502') { // NOT NULL violation
+          errorTitle = 'Datos incompletos';
+          errorMessage = 'Algunos campos obligatorios no fueron enviados correctamente. Por favor verifica todos los campos e intenta nuevamente.';
+        } else if (error.code === '23503') { // Foreign key violation
+          errorTitle = 'Referencia inválida';
+          if (error.message.includes('agente_id')) {
+            errorMessage = 'El agente seleccionado no es válido. Por favor selecciona otro agente o deja el campo vacío.';
+          } else if (error.message.includes('usuario_id')) {
+            errorMessage = 'Tu sesión no es válida. Por favor cierra sesión y vuelve a iniciar sesión.';
+          } else {
+            errorMessage = 'Una de las referencias en la solicitud no es válida. Por favor verifica los datos.';
+          }
+        } else if (error.code === '23505') { // Unique violation
+          errorTitle = 'Solicitud duplicada';
+          errorMessage = 'Ya existe una solicitud similar. Por favor verifica tus solicitudes existentes.';
+        } else if (error.code === '42501' || error.message.includes('permission')) { // Permission denied
+          errorTitle = 'Permisos insuficientes';
+          errorMessage = 'No tienes permisos para crear solicitudes. Por favor contacta al administrador.';
+        } else if (error.message.includes('titulo')) {
+          errorTitle = 'Error en el título';
+          errorMessage = 'El título de la solicitud no cumple con los requisitos. Debe tener entre 5 y 200 caracteres.';
+        } else if (error.message.includes('mensaje')) {
+          errorTitle = 'Error en el mensaje';
+          errorMessage = 'El mensaje de la solicitud no cumple con los requisitos. Debe tener al menos 10 caracteres.';
+        } else if (error.message.includes('tipo')) {
+          errorTitle = 'Tipo de solicitud inválido';
+          errorMessage = 'El tipo de solicitud seleccionado no es válido. Por favor selecciona un tipo válido.';
+        } else if (error.message.includes('prioridad')) {
+          errorTitle = 'Prioridad inválida';
+          errorMessage = 'La prioridad seleccionada no es válida. Por favor selecciona una prioridad válida.';
+        } else if (error.message.includes('network') || error.message.includes('connection')) {
+          errorTitle = 'Error de conexión';
+          errorMessage = 'No se pudo conectar con el servidor. Por favor verifica tu conexión a internet e intenta nuevamente.';
+        } else if (error.message.includes('timeout')) {
+          errorTitle = 'Tiempo de espera agotado';
+          errorMessage = 'La operación tardó demasiado tiempo. Por favor intenta nuevamente.';
+        } else if (error.details) {
+          errorMessage = `Error: ${error.message}\n\nDetalles: ${error.details}`;
+        } else {
+          errorMessage = `Error: ${error.message}\n\nPor favor verifica los datos e intenta nuevamente.`;
+        }
+
+        Alert.alert(errorTitle, errorMessage, [{ text: 'Entendido' }]);
         return;
       }
 
       if (!data) {
         console.error('No data returned from insert');
-        Alert.alert('Error', 'No se recibió confirmación de la solicitud creada');
+        Alert.alert(
+          'Error inesperado',
+          'No se recibió confirmación de la solicitud creada. Es posible que la solicitud se haya creado pero no podemos confirmarlo.\n\nPor favor revisa tu lista de solicitudes o intenta nuevamente.',
+          [{ text: 'Entendido' }]
+        );
         return;
       }
 
@@ -461,13 +607,31 @@ export default function Requests() {
       console.log('Mostrando alerta de éxito...');
       Alert.alert('Éxito', 'Solicitud creada correctamente');
       console.log('=== SOLICITUD CREADA EXITOSAMENTE ===');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Unexpected error creating request:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      Alert.alert(
-        'Error',
-        `Error inesperado al crear la solicitud: ${errorMessage}\n\nPor favor intenta de nuevo.`
-      );
+
+      let errorTitle = 'Error inesperado';
+      let errorMessage = 'Ocurrió un error inesperado al crear la solicitud.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('Failed to fetch')) {
+          errorTitle = 'Error de conexión';
+          errorMessage = 'No se pudo conectar con el servidor. Por favor verifica tu conexión a internet e intenta nuevamente.';
+        } else if (error.message.includes('timeout')) {
+          errorTitle = 'Tiempo de espera agotado';
+          errorMessage = 'La operación tardó demasiado tiempo. Por favor intenta nuevamente.';
+        } else if (error.message.includes('abort')) {
+          errorTitle = 'Operación cancelada';
+          errorMessage = 'La operación fue cancelada. Por favor intenta nuevamente.';
+        } else if (error.message.includes('parse') || error.message.includes('JSON')) {
+          errorTitle = 'Error de formato';
+          errorMessage = 'Hubo un problema al procesar la respuesta del servidor. Por favor intenta nuevamente.';
+        } else {
+          errorMessage = `${error.message}\n\nPor favor intenta de nuevo o contacta al soporte técnico si el problema persiste.`;
+        }
+      }
+
+      Alert.alert(errorTitle, errorMessage, [{ text: 'Entendido' }]);
     } finally {
       console.log('Finalizando proceso. Liberando botón...');
       setSubmitting(false);
@@ -897,16 +1061,41 @@ export default function Requests() {
 
           <ScrollView style={styles.modalContent}>
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Título *</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.formLabel}>Título *</Text>
+                <Text
+                  style={[
+                    styles.charCounter,
+                    newRequest.titulo.length < 5 && styles.charCounterWarning,
+                    newRequest.titulo.length > 200 && styles.charCounterError,
+                  ]}
+                >
+                  {newRequest.titulo.length}/200
+                </Text>
+              </View>
               <TextInput
-                style={styles.formInput}
+                style={[
+                  styles.formInput,
+                  newRequest.titulo.length > 200 && styles.formInputError,
+                ]}
                 placeholder="Describe brevemente tu solicitud"
                 placeholderTextColor="#9ca3af"
                 value={newRequest.titulo}
                 onChangeText={text =>
                   setNewRequest(prev => ({ ...prev, titulo: text }))
                 }
+                maxLength={250}
               />
+              {newRequest.titulo.length > 0 && newRequest.titulo.length < 5 && (
+                <Text style={styles.validationHint}>
+                  Mínimo 5 caracteres
+                </Text>
+              )}
+              {newRequest.titulo.length > 200 && (
+                <Text style={styles.validationError}>
+                  El título no puede exceder 200 caracteres
+                </Text>
+              )}
             </View>
 
             <View style={styles.formGroup}>
@@ -1037,7 +1226,19 @@ export default function Requests() {
             )}
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Mensaje *</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.formLabel}>Mensaje *</Text>
+                <Text
+                  style={[
+                    styles.charCounter,
+                    newRequest.mensaje.length > 0 &&
+                      newRequest.mensaje.length < 10 &&
+                      styles.charCounterWarning,
+                  ]}
+                >
+                  {newRequest.mensaje.length} caracteres
+                </Text>
+              </View>
               <FileUploadComponent
                 onFileSelected={handleFileSelected}
                 onFileRemoved={handleFileRemoved}
@@ -1057,6 +1258,11 @@ export default function Requests() {
                 numberOfLines={6}
                 textAlignVertical="top"
               />
+              {newRequest.mensaje.length > 0 && newRequest.mensaje.length < 10 && (
+                <Text style={styles.validationHint}>
+                  Mínimo 10 caracteres
+                </Text>
+              )}
             </View>
 
             <TouchableOpacity
@@ -1356,11 +1562,27 @@ const styles = StyleSheet.create({
   formGroup: {
     marginBottom: 24,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   formLabel: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#111827',
-    marginBottom: 8,
+  },
+  charCounter: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
+  },
+  charCounterWarning: {
+    color: '#f59e0b',
+  },
+  charCounterError: {
+    color: '#ef4444',
   },
   formInput: {
     backgroundColor: '#f9fafb',
@@ -1372,9 +1594,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
+  formInputError: {
+    borderColor: '#ef4444',
+    borderWidth: 2,
+  },
   formTextArea: {
     height: 120,
     textAlignVertical: 'top',
+  },
+  validationHint: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#f59e0b',
+    marginTop: 4,
+  },
+  validationError: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    color: '#ef4444',
+    marginTop: 4,
   },
   typeScroll: {
     flexGrow: 0,
