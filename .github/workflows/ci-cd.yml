@@ -99,7 +99,7 @@ jobs:
       run: npm ci
       
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v6
       with:
         name: build-files
         path: dist/
@@ -153,7 +153,7 @@ jobs:
       run: npm ci
       
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v6
       with:
         name: build-files
         path: dist/
